@@ -1,0 +1,36 @@
+/* change bg colour to red */
+/* .red {
+    background-color: red;
+} */
+/*  Align image such that it starts from left */
+
+.leftImg {
+    float: left;
+    margin-right: 3px;
+    margin-bottom: 2%;
+    width: 49%;
+    border: 2px solid #555;
+}
+
+/* Align image such that it starts from half the screen */
+.rightImg {
+    float: right;
+    margin-left: 3px;
+    margin-bottom: 2%;
+    width: 49%;
+    border: 2px solid #555;
+}
+
+/* Align image to center of screen */
+.centerImg {
+
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-bottom: 2%;
+    width: 80%;
+    border: 2px solid #555;
+}
+.line {
+    height: 1px;
+    background: black;
+  }

@@ -1,0 +1,4 @@
+"graphs/20-24-Higher_Secondary_fin.png"
+"graphs/20-24-Lower_Secondary_fin.png"
+"graphs/gdp_per_capita (1).png"
+"graphs/gdp_per_capita (1).png"
