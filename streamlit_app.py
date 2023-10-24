@@ -10,7 +10,7 @@ from utils import (
 
 # dropdown box for selecting country
 
-st.title("Plots 🌎")
+
 
 le_df = pd.read_csv("./edu_datasets/life_expectancy_years.csv")
 
@@ -91,7 +91,10 @@ try:
     end_year = params.get("ey", 2020)[0]
 except:
     end_year = 2020
+    
 
+
+st.title("Plots 🌎")
 
 col1, col2 = st.columns(2)
 
@@ -100,26 +103,19 @@ selected_x      = col2.selectbox("Select x axis", indices, index=indices.index(s
 
 
 if(selected_y in edu_indices):
-    options = ['Both', 'Male', 'Female']
-    print("selected_options",selected_options)
+    
     col1, col2, col3 = st.columns(3)
-
+    options = ['Both', 'Male', 'Female']
+    
     checkbox_state1 = col1.checkbox(options[0],value = options[0] in selected_options)
     checkbox_state2 = col2.checkbox(options[1],value = options[1] in selected_options)
     checkbox_state3 = col3.checkbox(options[2],value = options[2] in selected_options)
-
-    if checkbox_state1:
-        selected_options.append(options[0])
-    else:
-        selected_options = [option for option in selected_options if option != options[0]]
-    if checkbox_state2:
-        selected_options.append(options[1])
-    else:
-        selected_options = [option for option in selected_options if option != options[1]]
-    if checkbox_state3:
-        selected_options.append(options[2])
-    else:
-        selected_options = [option for option in selected_options if option != options[2]]
+    
+    for i,checkbox in enumerate([checkbox_state1, checkbox_state2, checkbox_state3]):
+        if checkbox:
+            selected_options.append(options[i])
+        elif options[i] in selected_options and not checkbox:
+            selected_options.remove(options[i])
 
     selected_options = list(set(selected_options))
     for selected_option in selected_options:

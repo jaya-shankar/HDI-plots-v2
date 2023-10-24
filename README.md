@@ -1,4 +1,24 @@
 # LiveSessionPlots
 
 ## Deployed Streamlit URL: 
-https://jaya-shankar-livesessionplots-streamlit-app-9vnsv1.streamlit.app/
+https://hdi-plots.streamlit.app/
+
+
+## To run locally
+
+1. Create and Activate virtual environment
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies
+```
+pip install -r requirements.txt
+```
+
+3. Start streamlit app
+```
+streamlit run streamlit_app.py
+```
