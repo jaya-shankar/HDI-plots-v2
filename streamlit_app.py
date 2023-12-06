@@ -219,7 +219,11 @@ else:
 ax.set_xlabel(selected_x)
 ax.set_ylabel(selected_y)
 ax.set_title(f"{selected_y} vs {selected_x}")
+
+if(selected_y.find("Secondary") != -1 and not st.session_state["world"]):
+    ax.set_xticks(range(int(min(ax.get_xticks())+1), int(max(ax.get_xticks())) + 1))
 ax.legend()
+
 
 
 
