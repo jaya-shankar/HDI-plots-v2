@@ -28,6 +28,20 @@ datasets_path = {
     "india_tfr": root + "India/TFR.csv",
 }
 
+india = "India/"
+states_datasets_path = {
+    "Female Primary Gross Enrolment Ratio": root + india +"primary-girls.csv",
+    "Female Lower Secondary Gross Enrolment Ratio": root + india +"lower-secondary-girls.csv",
+    "Female Higher Secondary Gross Enrolment Ratio": root + india +"upper-secondary-girls.csv",
+    
+    "Male Primary Gross Enrolment Ratio": root + india +"primary-boys.csv",
+    "Male Lower Secondary Gross Enrolment Ratio": root + india + "lower-secondary-boys.csv",
+    "Male Higher Secondary Gross Enrolment Ratio": root + india + "upper-secondary-boys.csv",
+    
+    "Both Primary Gross Enrolment Ratio": root + india + "primary-total.csv",
+    "Both Lower Secondary Gross Enrolment Ratio": root + india + "lower-secondary-total.csv",
+    "Both Higher Secondary Gross Enrolment Ratio": root + india + "upper-secondary-total.csv",
+}
 
 def get_country_coords(country, x, y, years):
     df_1 = pd.read_csv(datasets_path[x])
@@ -55,6 +69,23 @@ def get_country_coords(country, x, y, years):
 
     df_3.drop(["year"], axis=1, inplace=True)
     return df_3
+
+
+def get_state_coords(state, y):
+    df = pd.read_csv(states_datasets_path[y])
+    df = df[df["state"] == state]
+    df = df.drop(["state"], axis=1)
+    df = df.dropna(axis=1)
+    print(df)
+    df = df.T
+    df.reset_index(inplace=True)
+    df.columns = ["x", "y"]
+    df = df[df["x"].str.isnumeric()]
+    df["x"] = df["x"].astype(int)
+    print(df)
+    return df
+    
+    pass
 
 
 def save_csv(selected_countries, x, y, years):
