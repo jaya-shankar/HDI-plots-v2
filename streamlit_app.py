@@ -63,6 +63,7 @@ cleaned_indices ={
     "ls_edu" : "Lower Secondary Education",
     "ls_ge" : "Lower Secondary Gross Enrolment Ratio",
     "hs_edu" : "Higher Secondary Education",
+    "hs_ge" : "Higher Secondary Gross Enrolment Ratio",
     "clg_comp" : "College Completion",
     "gdp" : "GDP per Capita",
     "le" : "Life Expectancy",
