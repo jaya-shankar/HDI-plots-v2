@@ -76,13 +76,11 @@ def get_state_coords(state, y):
     df = df[df["state"] == state]
     df = df.drop(["state"], axis=1)
     df = df.dropna(axis=1)
-    print(df)
     df = df.T
     df.reset_index(inplace=True)
     df.columns = ["x", "y"]
     df = df[df["x"].str.isnumeric()]
     df["x"] = df["x"].astype(int)
-    print(df)
     return df
     
     pass

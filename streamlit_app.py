@@ -58,16 +58,10 @@ india_indices = india_edu_indices
 
 
 cleaned_indices ={
-    "f_pri_edu" : "Female Primary Education",
-    "f_ls_edu" : "Female Lower Secondary Education",
-    "f_hs_edu" : "Female Higher Secondary Education",
-    "f_clg_comp" : "Female College Completion",
-    "m_pri_edu" : "Male Primary Education",
-    "m_ls_edu" : "Male Lower Secondary Education",
-    "m_hs_edu" : "Male Higher Secondary Education",
-    "m_clg_comp" : "Male College Completion",
     "pri_edu" : "Primary Education",
+    "pri_ge" : "Primary Gross Enrolment Ratio",
     "ls_edu" : "Lower Secondary Education",
+    "ls_ge" : "Lower Secondary Gross Enrolment Ratio",
     "hs_edu" : "Higher Secondary Education",
     "clg_comp" : "College Completion",
     "gdp" : "GDP per Capita",
@@ -77,6 +71,9 @@ cleaned_indices ={
     
 }
 
+if("world" not in st.session_state):
+    st.session_state["world"] = True
+
 cleaned_indices_reversed = {v: k for k, v in cleaned_indices.items()}
 
 
@@ -85,8 +82,15 @@ selected_ys = []
 
 params = st.experimental_get_query_params()
 selected_states = []
-selected_countries = params.get("c", countries)
-selected_countries = selected_countries[0].split(",")
+
+if("world" in params):
+    st.session_state["world"] = True if params.get("world")[0] == "true" else False
+if(st.session_state["world"]):
+    selected_countries = params.get("c", countries)
+    selected_countries = selected_countries[0].split(",")
+else:
+    selected_states = params.get("s", indian_states)
+    selected_states = selected_states[0].split(",")
 selected_options = params.get("gender", [])
 if(len(selected_options) == 0):
     selected_options = ["Female"]
@@ -121,19 +125,27 @@ col1, col2 = st.columns(2)
 
 if(col1.button("World", type="primary" if st.session_state["world"] else "secondary")):
     st.session_state["world"] = True
+    st.experimental_set_query_params(world="true")
     st.experimental_rerun()
     pass
 if(col2.button("India",type="primary" if not st.session_state["world"] else "secondary")):
     st.session_state["world"] = False
+    st.experimental_set_query_params(world="false")
     st.experimental_rerun()
-    pass
 
 col1, col2 = st.columns(2)
 if(st.session_state["world"]):
+    if(selected_y not in indices):
+        selected_y = indices[0]
     selected_y      = col1.selectbox("Select y axis", indices, index=indices.index(selected_y))
+    
+    if(selected_x not in indices):
+        selected_x = indices[1] 
     selected_x      = col2.selectbox("Select x axis", indices, index=indices.index(selected_x))
 else:
-    selected_y      = col1.selectbox("Select y axis", india_indices, index=indices.index(selected_y))
+    if(selected_y not in india_indices):
+        selected_y = india_indices[0]
+    selected_y      = col1.selectbox("Select y axis", india_indices, index=india_indices.index(selected_y))
     selected_x      = col2.selectbox("Select x axis", time_indices, index=0, disabled=True)
 
 if(st.session_state["world"]):
@@ -190,31 +202,26 @@ else:
 
 
 
-if(st.session_state["world"]):
-    st.experimental_set_query_params(
-        c=",".join(selected_countries),
-        x=cleaned_indices_reversed[selected_x],
-        y=cleaned_indices_reversed[selected_y],
-        sy=selected_years[0],
-        ey=selected_years[1],
-        gender=selected_options
-    )
-
-
 # plot the line chart using Matplotlib
 fig, ax = plt.subplots()
 country_coords = None
 if(st.session_state["world"]):
     for selected_country in selected_countries:
-        for selected_y,gender in selected_ys:
-            country_coords = get_country_coords(selected_country, selected_x, selected_y,selected_years)
+        for selected_y_t,gender in selected_ys:
+            country_coords = get_country_coords(selected_country, selected_x, selected_y_t,selected_years)
             ax.plot(country_coords["x"], country_coords["y"], label=selected_country + " " + gender)
 else:
+    all_coords = []
     for selected_state in selected_states:
-        for selected_y,gender in selected_ys:
-            state_coords = get_state_coords(selected_state, selected_y)
-            # dotted line
-            ax.plot(state_coords["x"], state_coords["y"], "--" ,label=selected_state + " " + gender)
+        for selected_y_t,gender in selected_ys:
+            state_coords = get_state_coords(selected_state, selected_y_t)
+            all_coords.append((selected_state,gender,state_coords))
+            
+    # sort by y value
+    all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+    for state,gender,coords in all_coords:
+        # dotted line
+        ax.plot(coords["x"], coords["y"], "--" ,label=state)
 
 ax.set_xlabel(selected_x)
 ax.set_ylabel(selected_y)
@@ -231,7 +238,8 @@ if country_coords is not None and st.session_state["world"]:
     col1, col2  = st.columns(2)
     file_name   = f"{selected_x[:3]}_{selected_y[:3]}"
 
-    csv_snippet = save_csv(selected_countries, selected_x, selected_y, selected_years)
+    c_selected_y = selected_options[0] + " " + selected_y
+    csv_snippet = save_csv(selected_countries, selected_x, c_selected_y, selected_years)
     with open("chart.csv", "rb") as f:
         data_bytes = f.read()
         col1.download_button(
@@ -252,6 +260,25 @@ if country_coords is not None and st.session_state["world"]:
         )
 # display the chart in Streamlit app
 st.pyplot(fig)
+
+
+if(st.session_state["world"]):
+    st.experimental_set_query_params(
+        world="true",
+        c=",".join(selected_countries),
+        x=cleaned_indices_reversed[selected_x],
+        y=cleaned_indices_reversed[selected_y],
+        sy=selected_years[0],
+        ey=selected_years[1],
+        gender=selected_options
+    )
+else:
+    st.experimental_set_query_params(
+        world="false",
+        s=",".join(selected_states),
+        y=cleaned_indices_reversed[selected_y],
+        gender=selected_options
+    )
 
 
 st.markdown(

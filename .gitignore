@@ -1,2 +1,4 @@
 __pycache__/
 .venv
+chart.csv
+chart.png
