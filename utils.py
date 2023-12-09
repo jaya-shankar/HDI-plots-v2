@@ -41,49 +41,57 @@ states_datasets_path = {
     "Both Primary Gross Enrolment Ratio": root + india + "primary-total.csv",
     "Both Lower Secondary Gross Enrolment Ratio": root + india + "lower-secondary-total.csv",
     "Both Higher Secondary Gross Enrolment Ratio": root + india + "upper-secondary-total.csv",
+    
+    "Life Expectancy": root + india + "le-india-both.csv",
+    "Total Fertility Rate": root + india + "tfr-india.csv",
+    
+    "GDP per Capita": root + india + "gdp-india.csv",
 }
 
-def get_country_coords(country, x, y, years):
-    df_1 = pd.read_csv(datasets_path[x])
-    df_2 = pd.read_csv(datasets_path[y])
+def get_country_coords(country, y, years):
+    years = list(years)
+    df = pd.read_csv(datasets_path[y])
+    df = df[df["Country"] == country]
+    
+    if len(df) == 0:
+        return None
 
-    df_1 = df_1[df_1["Country"] == country]
-    df_2 = df_2[df_2["Country"] == country]
-
-    df_1 = df_1.drop(["Country"], axis=1)
-    df_2 = df_2.drop(["Country"], axis=1)
-
-    df_1 = df_1.T
-    df_2 = df_2.T
-
-    df_3 = df_1.merge(df_2, left_index=True, right_index=True)
-    df_3.columns = ["x", "y"]
-
-    df_3.reset_index(inplace=True)
-    df_3.rename(columns={"index": "year"}, inplace=True)
-    df_3 = df_3[df_3["year"].str.isnumeric()]
-    df_3["year"] = df_3["year"].astype(int)
-    df_3 = df_3[df_3["year"] >= years[0]]
-    df_3 = df_3[df_3["year"] <= years[1]]
-    df_3.dropna(inplace=True)
-
-    df_3.drop(["year"], axis=1, inplace=True)
-    return df_3
+    df = df.drop(["Country"], axis=1)
+    # keep only columns within values years[0] and years[1]
+    if(y == "Total Fertility Rate" and years[1]>2015):
+        years[1] = 2015
+    selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
+    df = df[selected_columns]
+    
+    df = df.dropna(axis=1)
+    df = df.T
+    df.reset_index(inplace=True)
+    
+    df.columns = ["x", "y"]
+    # df = df[df["x"].str.isnumeric()]
+    df["x"] = df["x"].astype(int)
+    
+    if(df["y"].dtype == "object"):
+        df["y"] = df["y"].astype(float)
+    return df
 
 
 def get_state_coords(state, y):
     df = pd.read_csv(states_datasets_path[y])
     df = df[df["state"] == state]
+    if len(df) == 0:
+        return None
     df = df.drop(["state"], axis=1)
     df = df.dropna(axis=1)
     df = df.T
     df.reset_index(inplace=True)
     df.columns = ["x", "y"]
-    df = df[df["x"].str.isnumeric()]
+    # df = df[df["x"].str.isnumeric()]
     df["x"] = df["x"].astype(int)
-    return df
     
-    pass
+    if(df["y"].dtype == "object"):
+        df["y"] = df["y"].astype(float)
+    return df
 
 
 def save_csv(selected_countries, x, y, years):
