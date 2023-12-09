@@ -28,7 +28,6 @@ india_edu_indices = [
     "Primary Gross Enrolment Ratio",
     "Lower Secondary Gross Enrolment Ratio",
     "Higher Secondary Gross Enrolment Ratio", 
-    "College Completion",
 ]
 
 
@@ -317,6 +316,7 @@ else:
         edu_ax.set_xlabel(selected_x)
         edu_ax.set_ylabel(selected_y)
         edu_ax.set_title(f"{selected_y}")
+        edu_ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         edu_ax.legend()
         
     if(le_indicator):
@@ -335,7 +335,7 @@ else:
                 continue
             tfr_ax.plot(state_coords["x"], state_coords["y"], "--" ,label=state)
         tfr_ax.set_title(f"Total Fertility Rate")
-        tfr_ax.set_xticks(range(int(min(tfr_ax.get_xticks())+1), int(max(tfr_ax.get_xticks())) + 1,3))
+        # tfr_ax.set_xticks(range(int(min(tfr_ax.get_xticks())+1), int(max(tfr_ax.get_xticks())) + 1,3))
         tfr_ax.legend()      
     if(gdp_indicator):
         for state,_,__ in all_coords:
