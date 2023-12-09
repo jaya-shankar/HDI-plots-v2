@@ -28,11 +28,9 @@ india_edu_indices = [
     "Primary Gross Enrolment Ratio",
     "Lower Secondary Gross Enrolment Ratio",
     "Higher Secondary Gross Enrolment Ratio", 
-]
-
-college_indices = [
     "College Completion",
 ]
+
 
 state_data_indices = [
     "Primary Education",
@@ -52,7 +50,7 @@ time_indices = [
     "Years",
 ]
 
-indices = edu_indices + college_indices + health_indices + econ_indices + time_indices
+indices = edu_indices
 
 india_indices = india_edu_indices
 
@@ -93,6 +91,7 @@ else:
     selected_states = params.get("s", indian_states)
     selected_states = selected_states[0].split(",")
 selected_options = params.get("gender", [])
+selected_other_indicators = params.get("other", [])
 if(len(selected_options) == 0):
     selected_options = ["Female"]
 selected_x, selected_y = indices[0], indices[1]
@@ -203,9 +202,16 @@ else:
 col1, col2, col3 = st.columns(3)
 other_indicators = ['Life Expectancy', 'Total Fertality Rate', 'GDP']
 
-le_indicator = col1.checkbox(other_indicators[0],value = other_indicators[0] in other_indicators)
-tfr_indicator = col2.checkbox(other_indicators[1],value = other_indicators[1] in other_indicators)
-gdp_indicator = col3.checkbox(other_indicators[2],value = other_indicators[2] in other_indicators)
+le_indicator = col1.checkbox(other_indicators[0],value = other_indicators[0] in selected_other_indicators)
+tfr_indicator = col2.checkbox(other_indicators[1],value = other_indicators[1] in selected_other_indicators)
+gdp_indicator = col3.checkbox(other_indicators[2],value = other_indicators[2] in selected_other_indicators)
+for i,checkbox in enumerate([le_indicator, tfr_indicator, gdp_indicator]):
+    if checkbox:
+        selected_other_indicators.append(other_indicators[i])
+    elif other_indicators[i] in selected_other_indicators and not checkbox:
+        selected_other_indicators.remove(other_indicators[i])
+
+selected_other_indicators = list(set(selected_other_indicators))
 
 
 # plot the line chart using Matplotlib
@@ -248,19 +254,25 @@ else:
         gdp_ax = ax[plot_no]
         plot_no += 1
 
+all_coords = []
 if(st.session_state["world"]):
     if(edu_indicator):
+        all_coords = []
         for selected_country in selected_countries:
             for selected_y_t,gender in selected_ys:
-                country_coords = get_country_coords(selected_country, selected_y_t, selected_years)
-                edu_ax.plot(country_coords["x"], country_coords["y"], label=selected_country + " " + gender)
+                state_coords = get_country_coords(selected_country, selected_y_t, selected_years)
+                all_coords.append((selected_country,gender,state_coords))
+        all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+        for country,gender,coords in all_coords:
+            edu_ax.plot(coords["x"], coords["y"] ,label=country)
         edu_ax.set_xlabel(selected_x)
         edu_ax.set_ylabel(selected_y)
         edu_ax.set_title(f"{selected_y} vs {selected_x}")
         edu_ax.legend()
         
     if(le_indicator):
-        for country in selected_countries:
+        for country,_,__ in all_coords:
+        # for country in selected_countries:
             country_coords = get_country_coords(country, "Life Expectancy", selected_years)
             if(country_coords is None):
                 continue
@@ -268,7 +280,7 @@ if(st.session_state["world"]):
         le_ax.set_title(f"Life Expectancy")
         le_ax.legend()
     if(tfr_indicator):
-        for country in selected_countries:
+        for country,_,__ in all_coords:
             # dotted line
             country_coords = get_country_coords(country, "Total Fertility Rate", selected_years)
             if(country_coords is None):
@@ -278,7 +290,7 @@ if(st.session_state["world"]):
         # tfr_ax.set_xticks(range(int(min(tfr_ax.get_xticks())+1), int(max(tfr_ax.get_xticks())) + 1,3))
         tfr_ax.legend()      
     if(gdp_indicator):
-        for country in selected_countries:
+        for country,_,__ in all_coords:
             # dotted line
             country_coords = get_country_coords(country, "GDP per Capita", selected_years)
             if(country_coords is None):
@@ -382,7 +394,8 @@ if(st.session_state["world"]):
         y=cleaned_indices_reversed[selected_y],
         sy=selected_years[0],
         ey=selected_years[1],
-        gender=selected_options
+        gender=selected_options,
+        other=selected_other_indicators
     )
 else:
     st.experimental_set_query_params(
@@ -390,6 +403,7 @@ else:
         s=",".join(selected_states),
         y=cleaned_indices_reversed[selected_y],
         gender=selected_options,
+        other=selected_other_indicators
         
     )
 
@@ -397,13 +411,13 @@ else:
 if(st.session_state["world"]):
 
     st.markdown(
-    """**_Note_** :  the Education data used is only 20-25 year old age group and data and it is as follows:
+"""**_Note_** :  the Education data used is only 20-25 year old age group and data and it is as follows:
 
-    - **Primary Education**           : 6 years of education
-    - **Lower Secondary Education**   : 9 years of education
-    - **Higher Secondary Education**  : 12 years of education
-    - **College Completion**          : 16 years of education
-                            """
+- **Primary Education**           : 6 years of education
+- **Lower Secondary Education**   : 9 years of education
+- **Higher Secondary Education**  : 12 years of education
+- **College Completion**          : 16 years of education
+                        """
     )
 
 
