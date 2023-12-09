@@ -1,7 +1,7 @@
 # LiveSessionPlots
 
 ## Deployed Streamlit URL: 
-https://hdi-plots.streamlit.app/
+https://hdi-plots-v3.streamlit.app/
 
 
 ## To run locally
