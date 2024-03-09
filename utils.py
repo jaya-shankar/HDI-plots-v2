@@ -42,6 +42,18 @@ states_datasets_path = {
     "Both Lower Secondary Gross Enrolment Ratio": root + india + "lower-secondary-total.csv",
     "Both Higher Secondary Gross Enrolment Ratio": root + india + "upper-secondary-total.csv",
     
+    "Female Primary Education": root + india +"primary-girls.csv",
+    "Female Lower Secondary Education": root + india +"lower-secondary-girls.csv",
+    "Female Higher Secondary Education": root + india +"upper-secondary-girls.csv",
+    
+    "Male Primary Education": root + india +"primary-boys.csv",
+    "Male Lower Secondary Education": root + india + "lower-secondary-boys.csv",
+    "Male Higher Secondary Education": root + india + "upper-secondary-boys.csv",
+    
+    "Both Primary Education": root + india + "primary-total.csv",
+    "Both Lower Secondary Education": root + india + "lower-secondary-total.csv",
+    "Both Higher Secondary Education": root + india + "upper-secondary-total.csv",
+    
     "Life Expectancy": root + india + "le-india-both.csv",
     "Total Fertility Rate": root + india + "tfr-india.csv",
     

@@ -53,5 +53,8 @@ class MatplotlibModule(BaseModule):
         ax.legend()
         self.subplot_no += 1
     
+    def reduce_subplot_no(self):
+        self.subplot_no -= 1
+        
     def get_fig(self):
         return self.fig
