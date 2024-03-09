@@ -2,13 +2,14 @@
 # pyright: reportMissingImports=false
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from utils import (
     get_country_coords,
     get_state_coords,
     save_csv,
 )
 
+from visualizations.matplotlib_module import MatplotlibModule
+from visualizations.plotly_module import PlotlyModule
 # dropdown box for selecting country
 
 
@@ -74,11 +75,14 @@ if("world" not in st.session_state):
 
 cleaned_indices_reversed = {v: k for k, v in cleaned_indices.items()}
 
-
+# Create a function to plot using Plotly
 selected_options = []
 selected_ys = []
 
-params = st.experimental_get_query_params()
+params = st.query_params.to_dict()
+for k, v in params.items():
+    params[k] = v.split(",")
+
 selected_states = []
 
 if("world" in params):
@@ -124,12 +128,12 @@ col1, col2 = st.columns(2)
 
 if(col1.button("World", type="primary" if st.session_state["world"] else "secondary")):
     st.session_state["world"] = True
-    st.experimental_set_query_params(world="true")
+    st.query_params["world"]="true"
     st.experimental_rerun()
     pass
 if(col2.button("India",type="primary" if not st.session_state["world"] else "secondary")):
     st.session_state["world"] = False
-    st.experimental_set_query_params(world="false")
+    st.query_params["world"]="false"
     st.experimental_rerun()
 
 col1, col2 = st.columns(2)
@@ -199,7 +203,7 @@ else:
     selected_states = st.multiselect("Select States", indian_states, selected_states)
 
 col1, col2, col3 = st.columns(3)
-other_indicators = ['Life Expectancy', 'Total Fertality Rate', 'GDP']
+other_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
 
 le_indicator = col1.checkbox(other_indicators[0],value = other_indicators[0] in selected_other_indicators)
 tfr_indicator = col2.checkbox(other_indicators[1],value = other_indicators[1] in selected_other_indicators)
@@ -223,37 +227,13 @@ if(tfr_indicator):
 if(gdp_indicator):
     rows += 1
 
-fig, ax = plt.subplots()
-if(rows == 2):
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-elif(rows == 3):
-    fig, ax = plt.subplots(1, 3, figsize=(15, 4))
-elif(rows == 4):
-    fig, ax = plt.subplots(2, 2, figsize=(10, 10))
-country_coords = None
-plot_no = 0
-edu_ax = ax
+plotter = MatplotlibModule(rows, vertical=False)
 
-if(rows == 4):
-    edu_ax = ax[0, 0]
-    le_ax = ax[0, 1]
-    tfr_ax = ax[1, 0]
-    gdp_ax = ax[1, 1]
-else:
-    if(rows > 1):
-        edu_ax = ax[plot_no]
-        plot_no += 1
-    if(le_indicator):
-        le_ax = ax[plot_no]
-        plot_no += 1
-    if(tfr_indicator):
-        tfr_ax = ax[plot_no]
-        plot_no += 1
-    if(gdp_indicator):
-        gdp_ax = ax[plot_no]
-        plot_no += 1
+country_coords = None
+
 
 all_coords = []
+
 if(st.session_state["world"]):
     if(edu_indicator):
         all_coords = []
@@ -262,96 +242,43 @@ if(st.session_state["world"]):
                 state_coords = get_country_coords(selected_country, selected_y_t, selected_years)
                 all_coords.append((selected_country,gender,state_coords))
         all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
-        for country,gender,coords in all_coords:
-            edu_ax.plot(coords["x"], coords["y"] ,label=country)
-        edu_ax.set_xlabel(selected_x)
-        edu_ax.set_ylabel(selected_y)
-        edu_ax.set_title(f"{selected_y} vs {selected_x}")
-        edu_ax.legend()
-        
-    if(le_indicator):
-        for country,_,__ in all_coords:
-        # for country in selected_countries:
-            country_coords = get_country_coords(country, "Life Expectancy", selected_years)
-            if(country_coords is None):
-                continue
-            le_ax.plot(country_coords["x"], country_coords["y"] ,label=country)
-        le_ax.set_title(f"Life Expectancy")
-        le_ax.legend()
-    if(tfr_indicator):
-        for country,_,__ in all_coords:
-            # dotted line
-            country_coords = get_country_coords(country, "Total Fertility Rate", selected_years)
-            if(country_coords is None):
-                continue
-            tfr_ax.plot(country_coords["x"], country_coords["y"], label=country)
-        tfr_ax.set_title(f"Total Fertility Rate")
-        # tfr_ax.set_xticks(range(int(min(tfr_ax.get_xticks())+1), int(max(tfr_ax.get_xticks())) + 1,3))
-        tfr_ax.legend()      
-    if(gdp_indicator):
-        for country,_,__ in all_coords:
-            # dotted line
-            country_coords = get_country_coords(country, "GDP per Capita", selected_years)
-            if(country_coords is None):
-                continue
-            gdp_ax.plot(country_coords["x"], country_coords["y"], label=country)
-        gdp_ax.set_title(f"GDP per Capita")
-        gdp_ax.legend()
+        plotter.create_plot(all_coords, selected_x, selected_y)
+    
+    for indicator_selected, indicator_name in zip([le_indicator, tfr_indicator, gdp_indicator], other_indicators):  
+        if not indicator_selected:
+            continue
+        data = []
+        for selected_country in selected_countries:
 
+            country_coords = get_country_coords(selected_country, indicator_name, selected_years)
+            if(country_coords is None):
+                continue
+            data.append((selected_country, "" ,country_coords))
+        plotter.create_plot(data, selected_x, indicator_name)
 
 else:
-    
-    all_coords = []
-    for selected_state in selected_states:
-        for selected_y_t,gender in selected_ys:
-            state_coords = get_state_coords(selected_state, selected_y_t)
-            all_coords.append((selected_state,gender,state_coords))
-            
-    # sort by y value
+
     if(edu_indicator):
+        all_coords = []
+        for selected_state in selected_states:
+            for selected_y_t,gender in selected_ys:
+                state_coords = get_state_coords(selected_state, selected_y_t)
+                all_coords.append((selected_state,gender,state_coords))
+                
         all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
-        for state,gender,coords in all_coords:
-            # dotted line
-            edu_ax.plot(coords["x"], coords["y"], "--" ,label=state)
-        edu_ax.set_xlabel(selected_x)
-        edu_ax.set_ylabel(selected_y)
-        edu_ax.set_title(f"{selected_y}")
-        edu_ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-        edu_ax.legend()
+        plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
         
-    if(le_indicator):
-        for state,_,__ in all_coords:
-            state_coords = get_state_coords(state, "Life Expectancy")
+    
+    for indicator_selected, indicator_name in zip([le_indicator, tfr_indicator, gdp_indicator], other_indicators):  
+        if not indicator_selected:
+            continue
+        data = []
+        for selected_state in selected_states:
+            state_coords = get_state_coords(selected_state, indicator_name)
             if(state_coords is None):
                 continue
-            le_ax.plot(state_coords["x"], state_coords["y"], "--" ,label=state)
-        le_ax.set_title(f"Life Expectancy")
-        le_ax.legend()
-    if(tfr_indicator):
-        for state,_,__ in all_coords:
-            # dotted line
-            state_coords = get_state_coords(state, "Total Fertility Rate")
-            if(state_coords is None):
-                continue
-            tfr_ax.plot(state_coords["x"], state_coords["y"], "--" ,label=state)
-        tfr_ax.set_title(f"Total Fertility Rate")
-        # tfr_ax.set_xticks(range(int(min(tfr_ax.get_xticks())+1), int(max(tfr_ax.get_xticks())) + 1,3))
-        tfr_ax.legend()      
-    if(gdp_indicator):
-        for state,_,__ in all_coords:
-            # dotted line
-            state_coords = get_state_coords(state, "GDP per Capita")
-            if(state_coords is None):
-                continue
-            gdp_ax.plot(state_coords["x"], state_coords["y"], "--" ,label=state)
-        gdp_ax.set_title(f"GDP per Capita")
-        gdp_ax.set_xticks(range(int(min(gdp_ax.get_xticks())+1), int(max(gdp_ax.get_xticks())) + 1,3))
-        gdp_ax.legend()
-
-# if(selected_y.find("Secondary") != -1 and not st.session_state["world"]):
-#     edu_ax.set_xticks(range(int(min(ax.get_xticks())+1), int(max(ax.get_xticks())) + 1))
-
-
+            data.append((selected_state, "" ,state_coords))
+        plotter.create_plot(data, selected_x, indicator_name, dotted=True)
 
 
 
@@ -373,7 +300,7 @@ if country_coords is not None and st.session_state["world"]:
             mime        = "text/csv",
         )
 
-    fig.savefig("chart.png")
+    # fig.savefig("chart.png")
     with open("chart.png", "rb") as f:
         image_bytes = f.read()
         col2.download_button(
@@ -382,30 +309,27 @@ if country_coords is not None and st.session_state["world"]:
             file_name   = f"{file_name}.png",
             mime        = "image/png",
         )
-# display the chart in Streamlit app
-st.pyplot(fig)
+
+st.pyplot(plotter.get_fig())
+# st.plotly_chart(plotter.get_fig(), use_container_width=True)
 
 
 if(st.session_state["world"]):
-    st.experimental_set_query_params(
-        world="true",
-        c=",".join(selected_countries),
-        x=cleaned_indices_reversed[selected_x],
-        y=cleaned_indices_reversed[selected_y],
-        sy=selected_years[0],
-        ey=selected_years[1],
-        gender=selected_options,
-        other=selected_other_indicators
-    )
+    
+    st.query_params["world"] = "true"
+    st.query_params["c"] = ",".join(selected_countries)
+    st.query_params["x"] = cleaned_indices_reversed[selected_x]
+    st.query_params["y"] = cleaned_indices_reversed[selected_y]
+    st.query_params["sy"] = selected_years[0]
+    st.query_params["ey"] = selected_years[1]
+    st.query_params["gender"] = ",".join(selected_options)
+    st.query_params["other"] = ",".join(selected_other_indicators)
 else:
-    st.experimental_set_query_params(
-        world="false",
-        s=",".join(selected_states),
-        y=cleaned_indices_reversed[selected_y],
-        gender=selected_options,
-        other=selected_other_indicators
-        
-    )
+    st.query_params["world"] = "false"
+    st.query_params["s"] = ",".join(selected_states)
+    st.query_params["y"] = cleaned_indices_reversed[selected_y]
+    st.query_params["gender"] = ",".join(selected_options)
+    st.query_params["other"] = ",".join(selected_other_indicators)
 
 
 if(st.session_state["world"]):
