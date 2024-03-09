@@ -2,6 +2,7 @@
 # pyright: reportMissingImports=false
 import streamlit as st
 import pandas as pd
+import constants
 from utils import (
     get_country_coords,
     get_state_coords,
@@ -9,7 +10,6 @@ from utils import (
 )
 
 from visualizations.matplotlib_module import MatplotlibModule
-from visualizations.plotly_module import PlotlyModule
 # dropdown box for selecting country
 
 
@@ -19,61 +19,27 @@ ind_edu_df = pd.read_csv("./edu_datasets/India/primary-total.csv")
 countries = le_df["Country"].unique()
 indian_states = ind_edu_df["state"].unique()
 
-edu_indices = [
-    "Primary Education",
-    "Lower Secondary Education",
-    "Higher Secondary Education", 
-]
-
-india_edu_indices = [
-    "Primary Gross Enrolment Ratio",
-    "Lower Secondary Gross Enrolment Ratio",
-    "Higher Secondary Gross Enrolment Ratio", 
-]
 
 
-state_data_indices = [
-    "Primary Education",
-    "Lower Secondary Education",
-]
+indices = constants.edu_indices
 
-health_indices = [
-    "Total Fertility Rate",
-    "Life Expectancy",
-]
-
-econ_indices = [
-    "GDP per Capita",
-]
-
-time_indices = [
-    "Years",
-]
-
-indices = edu_indices
-
-india_indices = india_edu_indices
+india_indices = constants.india_edu_indices
 
 
-cleaned_indices ={
-    "pri_edu" : "Primary Education",
-    "pri_ge" : "Primary Gross Enrolment Ratio",
-    "ls_edu" : "Lower Secondary Education",
-    "ls_ge" : "Lower Secondary Gross Enrolment Ratio",
-    "hs_edu" : "Higher Secondary Education",
-    "hs_ge" : "Higher Secondary Gross Enrolment Ratio",
-    "clg_comp" : "College Completion",
-    "gdp" : "GDP per Capita",
-    "le" : "Life Expectancy",
-    "tfr" : "Total Fertility Rate",
-    "time" : "Years",
-    
-}
+
+
+st.set_page_config(
+    page_title="HDI Plots",
+    page_icon="🌏",  # Replace this with your desired icon emoji or path to an icon image
+    layout="centered",  # Optional: Set the layout style (wide, center, or fullscreen)
+)
+st.markdown(constants.custom_style, unsafe_allow_html=True)
+
 
 if("world" not in st.session_state):
     st.session_state["world"] = True
 
-cleaned_indices_reversed = {v: k for k, v in cleaned_indices.items()}
+cleaned_indices_reversed = {v: k for k, v in constants.cleaned_indices.items()}
 
 # Create a function to plot using Plotly
 selected_options = []
@@ -99,12 +65,12 @@ if(len(selected_options) == 0):
     selected_options = ["Female"]
 selected_x, selected_y = indices[0], indices[1]
 try:
-    selected_x = cleaned_indices[params.get("x", indices)[0]]
+    selected_x = constants.cleaned_indices[params.get("x", indices)[0]]
 except:
     pass
 
 try:
-    selected_y = cleaned_indices[params.get("y", indices)[0]]
+    selected_y = constants.cleaned_indices[params.get("y", indices)[0]]
 except:
     pass
 
@@ -142,15 +108,15 @@ if(st.session_state["world"]):
         selected_y = indices[0]
     selected_y      = col1.selectbox("Select y axis", indices, index=indices.index(selected_y))
     
-    selected_x      = col2.selectbox("Select x axis", time_indices, index=0, disabled=True)
+    selected_x      = col2.selectbox("Select x axis",  constants.time_indices, index=0, disabled=True)
 else:
     if(selected_y not in india_indices):
         selected_y = india_indices[0]
     selected_y      = col1.selectbox("Select y axis", india_indices, index=india_indices.index(selected_y))
-    selected_x      = col2.selectbox("Select x axis", time_indices, index=0, disabled=True)
+    selected_x      = col2.selectbox("Select x axis", constants. time_indices, index=0, disabled=True)
 
 if(st.session_state["world"]):
-    if(selected_y in edu_indices): 
+    if(selected_y in constants.edu_indices): 
         
         col1, col2, col3 = st.columns(3)
         options = ['Both', 'Male', 'Female']
@@ -172,10 +138,11 @@ if(st.session_state["world"]):
     else:
         selected_ys.append((selected_y,""))
         
-    if(selected_x in edu_indices):
+    if(selected_x in constants.edu_indices):
         selected_x = "Both " + selected_x
     # Add a dropdown box to select a country
     selected_countries = st.multiselect("Select Countries", countries, selected_countries)
+    selected_states = st.multiselect("Select Indian States", indian_states, selected_states)
 
     selected_years  = st.slider("Select years", 1960, 2020, (int(start_year), int(end_year)))
 
@@ -235,21 +202,46 @@ country_coords = None
 all_coords = []
 
 if(st.session_state["world"]):
+    
     if(edu_indicator):
+        all_coords = []
+        
+        if len(selected_states) > 0:
+            for selected_state in selected_states:
+                for selected_y_t,gender in selected_ys:
+                    state_coords = get_state_coords(selected_state, selected_y_t)
+                    all_coords.append((selected_state,gender,state_coords))
+            
+            all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+            plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
+            plotter.reduce_subplot_no()
+        
         all_coords = []
         for selected_country in selected_countries:
             for selected_y_t,gender in selected_ys:
                 state_coords = get_country_coords(selected_country, selected_y_t, selected_years)
                 all_coords.append((selected_country,gender,state_coords))
         all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+        
         plotter.create_plot(all_coords, selected_x, selected_y)
+        
+        
     
     for indicator_selected, indicator_name in zip([le_indicator, tfr_indicator, gdp_indicator], other_indicators):  
         if not indicator_selected:
             continue
         data = []
+        if len(selected_states) > 0:
+            for selected_state in selected_states:
+                state_coords = get_state_coords(selected_state, indicator_name)
+                if(state_coords is None):
+                    continue
+                data.append((selected_state, "" ,state_coords))
+            plotter.create_plot(data, selected_x, indicator_name, dotted=True)
+            plotter.reduce_subplot_no()
+            
+        data = []
         for selected_country in selected_countries:
-
             country_coords = get_country_coords(selected_country, indicator_name, selected_years)
             if(country_coords is None):
                 continue
@@ -286,7 +278,7 @@ if country_coords is not None and st.session_state["world"]:
     col1, col2  = st.columns(2)
     file_name   = f"{selected_x[:3]}_{selected_y[:3]}"
 
-    if(selected_y in edu_indices):
+    if(selected_y in constants.edu_indices):
         c_selected_y = selected_options[0] + " " + selected_y
     else:
         c_selected_y = selected_y
@@ -343,7 +335,6 @@ if(st.session_state["world"]):
 - **College Completion**          : 16 years of education
                         """
     )
-
 
 
 
