@@ -1,6 +1,4 @@
 import matplotlib.pyplot as plt
-import pandas as pd
-
 from visualizations.base_module import BaseModule
 from matplotlib.axes import Axes
 

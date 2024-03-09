@@ -7,7 +7,9 @@ from utils import (
     get_state_coords,
     save_csv,
 )
+
 from visualizations.matplotlib_module import MatplotlibModule
+from visualizations.plotly_module import PlotlyModule
 # dropdown box for selecting country
 
 
@@ -307,9 +309,9 @@ if country_coords is not None and st.session_state["world"]:
             file_name   = f"{file_name}.png",
             mime        = "image/png",
         )
-# display the chart in Streamlit app
-st.pyplot(plotter.get_fig())
 
+st.pyplot(plotter.get_fig())
+# st.plotly_chart(plotter.get_fig(), use_container_width=True)
 
 
 if(st.session_state["world"]):
