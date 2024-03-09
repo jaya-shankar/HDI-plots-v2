@@ -14,8 +14,8 @@ from visualizations.matplotlib_module import MatplotlibModule
 
 
 
-le_df = pd.read_csv("./edu_datasets/life_expectancy_years.csv")
-ind_edu_df = pd.read_csv("./edu_datasets/India/primary-total.csv")
+le_df = pd.read_csv("../datasets/life_expectancy_years.csv")
+ind_edu_df = pd.read_csv("../datasets/India/primary-total.csv")
 countries = le_df["Country"].unique()
 indian_states = ind_edu_df["state"].unique()
 
@@ -141,8 +141,18 @@ if(st.session_state["world"]):
     if(selected_x in constants.edu_indices):
         selected_x = "Both " + selected_x
     # Add a dropdown box to select a country
-    selected_countries = st.multiselect("Select Countries", countries, selected_countries)
-    selected_states = st.multiselect("Select Indian States", indian_states, selected_states)
+    print(selected_countries)
+    try:
+        selected_countries = selected_countries.remove("")
+    except:
+        pass
+    try:
+        selected_states = selected_states.remove("")
+    except:
+        pass
+        
+    selected_countries = st.multiselect("Select Countries", countries, default=selected_countries)
+    selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states)
 
     selected_years  = st.slider("Select years", 1960, 2020, (int(start_year), int(end_year)))
 

@@ -44,11 +44,11 @@ class MatplotlibModule(BaseModule):
 
         ax.set_title(f"{ylabel} vs {xlabel}")
         
-        s_y,e_y = min(data[0][2]["x"]), max(data[0][2]["x"])
-        gap = (e_y-s_y)//6 
-        if(gap<1):
-            gap = 1
-        ax.set_xticks(range(int(s_y), int(e_y) + 1, gap))
+        # s_y,e_y = min(data[0][2]["x"]), max(data[0][2]["x"])
+        # gap = (e_y-s_y)//6 
+        # if(gap<1):
+        #     gap = 1
+        # ax.set_xticks(range(int(s_y), int(e_y) + 1, gap))
         
         ax.legend()
         self.subplot_no += 1
