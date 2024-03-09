@@ -2,24 +2,22 @@
 # pyright: reportMissingImports=false
 import streamlit as st
 import pandas as pd
-import constants
-from utils import (
+import app.constants as constants
+from app.utils import (
     get_country_coords,
     get_state_coords,
     save_csv,
+    get_countries,
+    get_indian_states
 )
 
-from visualizations.matplotlib_module import MatplotlibModule
+from app.visualizations.matplotlib_module import MatplotlibModule
 # dropdown box for selecting country
 
 
 
-le_df = pd.read_csv("../datasets/life_expectancy_years.csv")
-ind_edu_df = pd.read_csv("../datasets/India/primary-total.csv")
-countries = le_df["Country"].unique()
-indian_states = ind_edu_df["state"].unique()
-
-
+countries = get_countries()
+indian_states = get_indian_states()
 
 indices = constants.edu_indices
 
@@ -302,6 +300,7 @@ if country_coords is not None and st.session_state["world"]:
             mime        = "text/csv",
         )
 
+    plotter.save_plot("chart.png")
     # fig.savefig("chart.png")
     with open("chart.png", "rb") as f:
         image_bytes = f.read()
