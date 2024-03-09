@@ -1,7 +1,7 @@
 # pyright: reportMissingModuleSource=false
 import pandas as pd
 
-root = "./edu_datasets/"
+root = "../datasets/"
 datasets_path = {
     "Female Primary Education": root + "20-24-female-Primary_fin.csv",
     "Female Lower Secondary Education": root + "20-24-female-Lower_Secondary_fin.csv",
