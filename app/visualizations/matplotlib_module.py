@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from visualizations.base_module import BaseModule
+from .base_module import BaseModule
 from matplotlib.axes import Axes
 
 class MatplotlibModule(BaseModule):
@@ -53,6 +53,8 @@ class MatplotlibModule(BaseModule):
         ax.legend()
         self.subplot_no += 1
     
+    def save_plot(self,file_name = "chart.png"):
+        self.fig.savefig(file_name)
     def reduce_subplot_no(self):
         self.subplot_no -= 1
         

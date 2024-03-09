@@ -1,7 +1,7 @@
 # pyright: reportMissingModuleSource=false
 import pandas as pd
 
-root = "../datasets/"
+root = "datasets/"
 datasets_path = {
     "Female Primary Education": root + "20-24-female-Primary_fin.csv",
     "Female Lower Secondary Education": root + "20-24-female-Lower_Secondary_fin.csv",
@@ -59,6 +59,16 @@ states_datasets_path = {
     
     "GDP per Capita": root + india + "gdp-india.csv",
 }
+
+def get_countries():
+    le_df = pd.read_csv(datasets_path["Life Expectancy"])
+    countries = le_df["Country"].unique()
+    return countries
+    
+def get_indian_states():
+    ind_edu_df = pd.read_csv(states_datasets_path["Life Expectancy"])
+    indian_states = ind_edu_df["state"].unique()
+    return indian_states
 
 def get_country_coords(country, y, years):
     years = list(years)
