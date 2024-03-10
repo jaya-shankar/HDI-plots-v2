@@ -15,7 +15,7 @@ class MatplotlibModule(BaseModule):
             elif(subplots_count == 4):
                 fig, ax = plt.subplots(2, 2, figsize=(10, 10))
         else:
-            fig, ax = plt.subplots(subplots_count, 1, figsize=(10, 5*subplots_count))    
+            fig, ax = plt.subplots(subplots_count, 1, figsize=(5, 5*subplots_count))    
         
         self.vertical = vertical
         self.subplots_count = subplots_count
