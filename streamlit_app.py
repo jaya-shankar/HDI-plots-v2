@@ -23,7 +23,7 @@ indices = constants.edu_indices
 
 india_indices = constants.india_edu_indices
 
-
+vertical_view = False
 
 
 st.set_page_config(
@@ -139,7 +139,6 @@ if(st.session_state["world"]):
     if(selected_x in constants.edu_indices):
         selected_x = "Both " + selected_x
     # Add a dropdown box to select a country
-    print(selected_countries)
     try:
         selected_countries = selected_countries.remove("")
     except:
@@ -191,7 +190,7 @@ for i,checkbox in enumerate([le_indicator, tfr_indicator, gdp_indicator]):
 
 selected_other_indicators = list(set(selected_other_indicators))
 
-
+vertical_view = st.checkbox("Vertical View", value=vertical_view)
 # plot the line chart using Matplotlib
 rows = 1
 edu_indicator = True
@@ -202,7 +201,7 @@ if(tfr_indicator):
 if(gdp_indicator):
     rows += 1
 
-plotter = MatplotlibModule(rows, vertical=False)
+plotter = MatplotlibModule(rows, vertical=vertical_view)
 
 country_coords = None
 
