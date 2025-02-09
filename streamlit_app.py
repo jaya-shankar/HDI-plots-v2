@@ -14,12 +14,6 @@ from app.utils import (
 from app.visualizations.matplotlib_module import MatplotlibModule
 # dropdown box for selecting country
 
-# --- Load 'vertical_view' from URL parameters ---
-url_params = st.query_params.to_dict()
-vertical_from_url = url_params.get("vertical", ["false"])[0].lower() == "true"
-
-# --- Synchronize session state with URL parameter (if present) ---
-st.session_state.vertical_view = vertical_from_url
 
 countries = get_countries()
 indian_states = get_indian_states()
@@ -49,16 +43,17 @@ params = st.query_params.to_dict()
 for k, v in params.items():
     params[k] = v.split(",")
 
+
 selected_states = []
 
 if("world" in params):
     st.session_state["world"] = True if params.get("world")[0] == "true" else False
 if(st.session_state["world"]):
     selected_countries = params.get("c", countries)
-    selected_countries = selected_countries[0].split(",")
+    # selected_countries = selected_countries[0].split(",") # This line make the plot to select only first country in URL
 else:
     selected_states = params.get("s", indian_states)
-    selected_states = selected_states[0].split(",")
+    # selected_states = selected_states[0].split(",")
 selected_options = params.get("gender", [])
 selected_other_indicators = params.get("other", [])
 if(len(selected_options) == 0):
@@ -82,6 +77,11 @@ try:
     end_year = params.get("ey", 2020)[0]
 except:
     end_year = 2020
+    
+try:
+    vertical_view = params.get("vertical", ["false"])[0].lower() == "true"
+except:
+    vertical_view = False
 
 
 
@@ -183,18 +183,14 @@ other_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
 
 vertical_from_url = st.query_params.get("vertical", ["false"])[0].lower() == "true"
 # print(vertical_from_url)
-st.session_state.vertical_view = vertical_from_url
 
 # Single vertical view checkbox with unique key
 vertical_view = st.checkbox(
     "Vertical View",
-    value=st.session_state.vertical_view,
-    key="vertical_view_checkbox",
-    on_change=lambda: st.query_params.update({"vertical": str(not st.session_state.vertical_view).lower()})
+    value=vertical_view,
+    key="vertical_view_checkbox"
 )
 
-# Update session state when checkbox changes
-st.session_state.vertical_view = vertical_view
 
 le_indicator = col1.checkbox(other_indicators[0],value = other_indicators[0] in selected_other_indicators, key = "le_checkbox")
 tfr_indicator = col2.checkbox(other_indicators[1],value = other_indicators[1] in selected_other_indicators, key = "tfr_checkbox")
@@ -217,7 +213,7 @@ if(tfr_indicator):
 if(gdp_indicator):
     rows += 1
 
-plotter = MatplotlibModule(rows, vertical=st.session_state.vertical_view)
+plotter = MatplotlibModule(rows, vertical=vertical_view)
 
 country_coords = None
 
@@ -343,7 +339,7 @@ if(st.session_state["world"]):
         "ey": selected_years[1],
         "gender": ",".join(selected_options),
         "other": ",".join(selected_other_indicators),
-        "vertical": str(st.session_state.vertical_view).lower()
+        "vertical": str(vertical_view).lower()
     })
 else:
     st.query_params.update({
@@ -352,7 +348,7 @@ else:
         "y": cleaned_indices_reversed[selected_y],
         "gender": ",".join(selected_options),
         "other": ",".join(selected_other_indicators),
-        "vertical": str(st.session_state.vertical_view).lower()
+        "vertical": str(vertical_view).lower()
     })
 
 

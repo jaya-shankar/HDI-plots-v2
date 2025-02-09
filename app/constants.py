@@ -4,6 +4,7 @@ edu_indices = [
     "Primary Education",
     "Lower Secondary Education",
     "Higher Secondary Education", 
+    "College Completion",
 ]
 
 india_edu_indices = [
