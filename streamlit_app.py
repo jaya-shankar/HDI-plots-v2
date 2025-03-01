@@ -63,11 +63,17 @@ def get_selected_x_and_y(params, indices):
     return selected_x, selected_y
 
 def get_selected_countries_and_states(params, world, countries, indian_states):
+
     """Get the selected countries and states from the query parameters"""
+    
+    selected_countries = []
+    selected_states    = []
+    
     if world:
-        selected_countries = params.get("c", countries)
+        selected_countries = params.get("c", ["India"])
     else:
-        selected_states = params.get("s", indian_states)
+        selected_states = params.get("s", ["Kerala"])
+    
     return selected_countries, selected_states
 
 def set_page_config():
@@ -86,6 +92,7 @@ def main():
     indices, india_indices   = get_indices()
     selected_options, selected_other_indicators = get_selected_options(params)
     selected_x, selected_y   = get_selected_x_and_y(params, indices)
+    
     selected_countries, selected_states = get_selected_countries_and_states(params, world, countries, indian_states)
 
     set_page_config()
@@ -99,12 +106,7 @@ def main():
     selected_ys      = []
 
 
-    selected_states = []
-
-    if world:
-        selected_countries = params.get("c", ['India'])
-    else:
-        selected_states    = params.get("s", ['Kerala'])
+   
     selected_options       = params.get("gender", [])
     selected_other_indicators = params.get("other", [])
     if len(selected_options) == 0:
@@ -201,7 +203,7 @@ def main():
         selected_countries = st.multiselect("Select Countries", countries, default=selected_countries, key = "countries_multiselect")
         selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
 
-        selected_years  = st.slider("Select years", 1960, 2020, start_year, end_year, key = "years_slider")
+        selected_years  = st.slider("Select years", min_value = 1960, max_value=2020, value=(start_year, end_year), key = "years_slider")
 
     else:
 

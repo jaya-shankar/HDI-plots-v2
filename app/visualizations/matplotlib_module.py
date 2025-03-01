@@ -50,7 +50,10 @@ class MatplotlibModule(BaseModule):
         #     gap = 1
         # ax.set_xticks(range(int(s_y), int(e_y) + 1, gap))
         
-        ax.legend()
+        handles, labels = ax.get_legend_handles_labels()
+        sorted_labels_handles = sorted(zip(labels, handles), key=lambda x: x[0])
+        labels, handles = zip(*sorted_labels_handles)
+        ax.legend(handles, labels)
         self.subplot_no += 1
     
     def save_plot(self,file_name = "chart.png"):
