@@ -61,39 +61,39 @@ states_datasets_path = {
 }
 
 def get_countries():
-    le_df = pd.read_csv(datasets_path["Life Expectancy"])
+    le_df     = pd.read_csv(datasets_path["Life Expectancy"])
     countries = le_df["Country"].unique()
     return countries
     
 def get_indian_states():
-    ind_edu_df = pd.read_csv(states_datasets_path["Life Expectancy"])
+    ind_edu_df    = pd.read_csv(states_datasets_path["Life Expectancy"])
     indian_states = ind_edu_df["state"].unique()
     return indian_states
 
 def get_country_coords(country, y, years):
     years = list(years)
-    df = pd.read_csv(datasets_path[y])
-    df = df[df["Country"] == country]
+    df    = pd.read_csv(datasets_path[y])
+    df    = df[df["Country"] == country]
     
     if len(df) == 0:
         return None
 
-    df = df.drop(["Country"], axis=1)
+    df    = df.drop(["Country"], axis=1)
     # keep only columns within values years[0] and years[1]
     if(y == "Total Fertility Rate" and years[1]>2015):
         years[1] = 2015
     selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
-    df = df[selected_columns]
+    df    = df[selected_columns]
     
-    df = df.dropna(axis=1)
-    df = df.T
+    df    = df.dropna(axis=1)
+    df    = df.T
     df.reset_index(inplace=True)
     
     df.columns = ["x", "y"]
     # df = df[df["x"].str.isnumeric()]
     df["x"] = df["x"].astype(int)
     
-    if(df["y"].dtype == "object"):
+    if (df["y"].dtype == "object"):
         df["y"] = df["y"].astype(float)
     return df
 
@@ -111,7 +111,7 @@ def get_state_coords(state, y):
     # df = df[df["x"].str.isnumeric()]
     df["x"] = df["x"].astype(int)
     
-    if(df["y"].dtype == "object"):
+    if (df["y"].dtype == "object"):
         df["y"] = df["y"].astype(float)
     return df
 
