@@ -65,15 +65,15 @@ def get_selected_x_and_y(params, indices):
 def get_selected_countries_and_states(params, world, countries, indian_states):
 
     """Get the selected countries and states from the query parameters"""
-    
+
     selected_countries = []
     selected_states    = []
-    
+
     if world:
         selected_countries = params.get("c", ["India"])
     else:
         selected_states = params.get("s", ["Kerala"])
-    
+
     return selected_countries, selected_states
 
 def set_page_config():
@@ -92,7 +92,7 @@ def main():
     indices, india_indices   = get_indices()
     selected_options, selected_other_indicators = get_selected_options(params)
     selected_x, selected_y   = get_selected_x_and_y(params, indices)
-    
+
     selected_countries, selected_states = get_selected_countries_and_states(params, world, countries, indian_states)
 
     set_page_config()
@@ -106,7 +106,7 @@ def main():
     selected_ys      = []
 
 
-   
+
     selected_options       = params.get("gender", [])
     selected_other_indicators = params.get("other", [])
     if len(selected_options) == 0:
@@ -130,7 +130,7 @@ def main():
         end_year   = int(params.get("ey", [2020])[0])
     except:
         end_year   = 2020
-        
+
     try:
         vertical_view = params.get("vertical", ["false"])[0].lower() == "true"
     except:
@@ -145,12 +145,12 @@ def main():
     if col1.button("World", type = "primary" if world else "secondary", key="world_button"):
         st.query_params["world"] = "true"
         world                    = True
-        st.experimental_rerun()
+        st.rerun()
 
     if col2.button("India", type = "primary" if not world else "secondary", key = "india_button"):
         st.query_params["world"] = "false"
         world                    = False
-        st.experimental_rerun()
+        st.rerun()
 
     col1, col2 = st.columns(2)
     if world:
