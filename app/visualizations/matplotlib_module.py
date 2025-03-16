@@ -35,9 +35,8 @@ class MatplotlibModule(BaseModule):
         self.vertical = vertical
         self.subplots_count = subplots_count
         self.subplot_no = 0
-        self.fig        = fig
-        self.ax         = ax
-
+        self.fig = fig
+        self.ax = ax
 
     def _get_plot_index(self, plot_no: int) -> int:
         if self.vertical:
@@ -47,11 +46,6 @@ class MatplotlibModule(BaseModule):
                 return plot_no
             else:
                 return plot_no//2, plot_no%2
-
-        if self.subplots_count <= 3:
-            return plot_no
-        return plot_no//2, plot_no%2
-
     def create_plot(self, data: list[tuple], xlabel: str, ylabel: str, dotted: bool = False) -> None:
 
         ax: Axes = self.ax
@@ -77,14 +71,12 @@ class MatplotlibModule(BaseModule):
         # ax.set_xticks(range(int(s_y), int(e_y) + 1, gap))
 
         handles, labels = ax.get_legend_handles_labels()
-        
-        handles, labels  = ax.get_legend_handles_labels()
         sorted_labels_handles = sorted(zip(labels, handles), key=lambda x: x[0])
-        labels, handles  = zip(*sorted_labels_handles)
+        labels, handles = zip(*sorted_labels_handles)
         ax.legend(handles, labels)
         self.subplot_no += 1
     
-    def save_plot(self,  file_name: str = "chart.png"):
+    def save_plot(self, file_name: str = "chart.png"):
         self.fig.savefig(file_name)
 
     def reduce_subplot_no(self):
