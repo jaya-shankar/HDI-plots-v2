@@ -1,5 +1,7 @@
 # pyright: reportMissingModuleSource=false
 import pandas as pd
+import os
+from app.hdi_preprocessor import preprocess_hdi_data, get_hdi_data_for_country, get_hdi_data_for_save_csv, get_hdi_data_for_state
 
 root = "datasets/"
 datasets_path = {
@@ -20,6 +22,7 @@ datasets_path = {
     
     "Total Fertility Rate": root + "children_per_woman_total_fertility.csv",
     "Life Expectancy": root + "life_expectancy_years.csv",
+    "Human Development Index": root + "human-development-index.csv",
     
     "GDP per Capita": root + "gdppercapita_us_inflation_adjusted.csv",
     
@@ -70,35 +73,51 @@ def get_indian_states():
     indian_states = ind_edu_df["state"].unique()
     return indian_states
 
+# HDI preprocessing functions moved to app/hdi_preprocessor.py
+
 def get_country_coords(country, y, years):
     years = list(years)
-    df    = pd.read_csv(datasets_path[y])
-    df    = df[df["Country"] == country]
     
-    if len(df) == 0:
-        return None
+    # Special handling for HDI data
+    if y == "Human Development Index":
+        return get_hdi_data_for_country(country, years)
+    else:
+        # Original implementation for other indicators
+        df = pd.read_csv(datasets_path[y])
+        df = df[df["Country"] == country]
+        
+        if len(df) == 0:
+            return None
 
-    df    = df.drop(["Country"], axis=1)
-    # keep only columns within values years[0] and years[1]
-    if(y == "Total Fertility Rate" and years[1]>2015):
-        years[1] = 2015
-    selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
-    df    = df[selected_columns]
-    
-    df    = df.dropna(axis=1)
-    df    = df.T
-    df.reset_index(inplace=True)
-    
-    df.columns = ["x", "y"]
-    # df = df[df["x"].str.isnumeric()]
-    df["x"] = df["x"].astype(int)
-    
-    if (df["y"].dtype == "object"):
-        df["y"] = df["y"].astype(float)
-    return df
+        df = df.drop(["Country"], axis=1)
+        # keep only columns within values years[0] and years[1]
+        if(y == "Total Fertility Rate" and years[1]>2015):
+            years[1] = 2015
+        selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
+        df = df[selected_columns]
+        
+        df = df.dropna(axis=1)
+        df = df.T
+        df.reset_index(inplace=True)
+        
+        df.columns = ["x", "y"]
+        # df = df[df["x"].str.isnumeric()]
+        df["x"] = df["x"].astype(int)
+        
+        if (df["y"].dtype == "object"):
+            df["y"] = df["y"].astype(float)
+        return df
 
 
 def get_state_coords(state, y):
+    # Special handling for HDI data for Indian states
+    if y == "Human Development Index":
+        return get_hdi_data_for_state(state)
+    
+    # Check if the dataset exists for this indicator
+    if y not in states_datasets_path:
+        return None
+    
     df = pd.read_csv(states_datasets_path[y])
     df = df[df["state"] == state]
     if len(df) == 0:
@@ -117,16 +136,29 @@ def get_state_coords(state, y):
 
 
 def save_csv(selected_countries, x, y, years):
-    df_1 = pd.read_csv(datasets_path[x])
-    df_2 = pd.read_csv(datasets_path[y])
+    # Special handling for HDI data
+    if y == "Human Development Index":
+        df_1 = pd.read_csv(datasets_path[x])
+        df_2 = get_hdi_data_for_save_csv(selected_countries)
+    else:
+        df_1 = pd.read_csv(datasets_path[x])
+        df_2 = pd.read_csv(datasets_path[y])
+    
     df_1 = df_1[df_1["Country"].isin(selected_countries)]
     df_2 = df_2[df_2["Country"].isin(selected_countries)]
 
     melted_df_1 = pd.melt(df_1, id_vars=["Country"], var_name="year", value_name=x)
-
     melted_df_1["year"] = melted_df_1["year"].astype(int)
 
-    melted_df_2 = pd.melt(df_2, id_vars=["Country"], var_name="year", value_name=y)
+    # Handle HDI data which has integer column names after preprocessing
+    if y == "Human Development Index":
+        # Convert column names to strings for consistency
+        year_columns = [str(col) for col in df_2.columns if col != "Country"]
+        df_2_subset = df_2[["Country"] + year_columns]
+        melted_df_2 = pd.melt(df_2_subset, id_vars=["Country"], var_name="year", value_name=y)
+    else:
+        melted_df_2 = pd.melt(df_2, id_vars=["Country"], var_name="year", value_name=y)
+    
     melted_df_2["year"] = melted_df_2["year"].astype(int)
 
     merged_df = pd.merge(melted_df_1, melted_df_2, on=["Country", "year"])
