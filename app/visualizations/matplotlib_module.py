@@ -47,6 +47,10 @@ class MatplotlibModule(BaseModule):
             else:
                 return plot_no//2, plot_no%2
     def create_plot(self, data: list[tuple], xlabel: str, ylabel: str, dotted: bool = False) -> None:
+        # Check if data is empty
+        if not data:
+            self.subplot_no += 1
+            return
 
         ax: Axes = self.ax
         if self.subplots_count > 1:

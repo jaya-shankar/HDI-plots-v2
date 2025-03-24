@@ -30,7 +30,8 @@ def get_countries_and_states():
 
 def get_indices():
     """Get the education indices"""
-    indices       = constants.edu_indices
+    # Only use education indices for y-axis dropdown
+    indices = constants.edu_indices
     india_indices = constants.india_edu_indices
     return indices, india_indices
 
@@ -228,8 +229,17 @@ def main():
 
         selected_states = st.multiselect("Select States", indian_states, selected_states, key = "states_multiselect_india")
 
-    col1, col2, col3 = st.columns(3)
-    other_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+    # Determine which indicators to show based on world/India selection
+    if world:
+        col1, col2, col3, col4 = st.columns(4)
+        other_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita', 'Human Development Index']
+    else:
+        # For India, don't show HDI
+        col1, col2, col3 = st.columns(3)
+        other_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+        # Remove HDI from selected indicators if it was previously selected
+        if 'Human Development Index' in selected_other_indicators:
+            selected_other_indicators.remove('Human Development Index')
 
     # Single vertical view checkbox with unique key
     vertical_view = st.checkbox(
@@ -238,15 +248,29 @@ def main():
         key="vertical_view_checkbox"
     )
 
-
-    le_indicator  = col1.checkbox(other_indicators[0],value = other_indicators[0] in selected_other_indicators, key = "le_checkbox")
-    tfr_indicator = col2.checkbox(other_indicators[1],value = other_indicators[1] in selected_other_indicators, key = "tfr_checkbox")
-    gdp_indicator = col3.checkbox(other_indicators[2],value = other_indicators[2] in selected_other_indicators, key = "gdp_checkbox")
-    for i,checkbox in enumerate([le_indicator, tfr_indicator, gdp_indicator]):
+    # Display checkboxes for indicators
+    le_indicator  = col1.checkbox(other_indicators[0], value=other_indicators[0] in selected_other_indicators, key="le_checkbox")
+    tfr_indicator = col2.checkbox(other_indicators[1], value=other_indicators[1] in selected_other_indicators, key="tfr_checkbox")
+    gdp_indicator = col3.checkbox(other_indicators[2], value=other_indicators[2] in selected_other_indicators, key="gdp_checkbox")
+    
+    # Only show HDI checkbox for world view
+    if world:
+        hdi_indicator = col4.checkbox('Human Development Index', value='Human Development Index' in selected_other_indicators, key="hdi_checkbox")
+    else:
+        hdi_indicator = False  # HDI is not available for Indian states
+    # Process checkboxes for indicators
+    if world:
+        checkboxes = [le_indicator, tfr_indicator, gdp_indicator, hdi_indicator]
+        all_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita', 'Human Development Index']
+    else:
+        checkboxes = [le_indicator, tfr_indicator, gdp_indicator]
+        all_indicators = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+    
+    for i, checkbox in enumerate(checkboxes):
         if checkbox:
-            selected_other_indicators.append(other_indicators[i])
-        elif other_indicators[i] in selected_other_indicators and not checkbox:
-            selected_other_indicators.remove(other_indicators[i])
+            selected_other_indicators.append(all_indicators[i])
+        elif all_indicators[i] in selected_other_indicators and not checkbox:
+            selected_other_indicators.remove(all_indicators[i])
 
     selected_other_indicators = list(set(selected_other_indicators))
 
@@ -258,6 +282,8 @@ def main():
     if tfr_indicator:
         rows += 1
     if gdp_indicator:
+        rows += 1
+    if hdi_indicator:
         rows += 1
 
     plotter = MatplotlibModule(rows, vertical=vertical_view)
@@ -276,24 +302,38 @@ def main():
                 for selected_state in selected_states:
                     for selected_y_t,gender in selected_ys:
                         state_coords = get_state_coords(selected_state, selected_y_t)
+                        if state_coords is None:
+                            continue
                         all_coords.append((selected_state,gender,state_coords))
-
-                all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
-                plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
-                plotter.reduce_subplot_no()
+                
+                if all_coords:  # Only create plot if there's data
+                    all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+                    plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
+                    plotter.reduce_subplot_no()
 
             all_coords = []
             for selected_country in selected_countries:
                 for selected_y_t,gender in selected_ys:
                     state_coords = get_country_coords(selected_country, selected_y_t, selected_years)
+                    if state_coords is None:
+                        continue
                     all_coords.append((selected_country,gender,state_coords))
-            all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+            
+            if all_coords:  # Only create plot if there's data
+                all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+                plotter.create_plot(all_coords, selected_x, selected_y)
 
-            plotter.create_plot(all_coords, selected_x, selected_y)
 
 
-
-        for indicator_selected, indicator_name in zip([le_indicator, tfr_indicator, gdp_indicator], other_indicators):
+        # Define indicators based on world/India selection
+        if world:
+            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator, hdi_indicator]
+            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita', 'Human Development Index']
+        else:
+            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]
+            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+            
+        for indicator_selected, indicator_name in zip(indicators_selected, indicator_names):
             if not indicator_selected:
                 continue
             data = []
@@ -303,8 +343,9 @@ def main():
                     if state_coords is None:
                         continue
                     data.append((selected_state, "" ,state_coords))
-                plotter.create_plot(data, selected_x, indicator_name, dotted=True)
-                plotter.reduce_subplot_no()
+                if data:  # Only create plot if there's data
+                    plotter.create_plot(data, selected_x, indicator_name, dotted=True)
+                    plotter.reduce_subplot_no()
 
             data = []
             for selected_country in selected_countries:
@@ -312,7 +353,8 @@ def main():
                 if country_coords is None:
                     continue
                 data.append((selected_country, "" ,country_coords))
-            plotter.create_plot(data, selected_x, indicator_name)
+            if data:  # Only create plot if there's data
+                plotter.create_plot(data, selected_x, indicator_name)
 
     else:
 
@@ -321,13 +363,24 @@ def main():
             for selected_state in selected_states:
                 for selected_y_t,gender in selected_ys:
                     state_coords = get_state_coords(selected_state, selected_y_t)
+                    if state_coords is None:
+                        continue
                     all_coords.append((selected_state,gender,state_coords))
 
-            all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
-            plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
+            if all_coords:  # Only create plot if there's data
+                all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
+                plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
 
 
-        for indicator_selected, indicator_name in zip([le_indicator, tfr_indicator, gdp_indicator], other_indicators):
+        # Define indicators based on world/India selection
+        if world:
+            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator, hdi_indicator]
+            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita', 'Human Development Index']
+        else:
+            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]
+            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+            
+        for indicator_selected, indicator_name in zip(indicators_selected, indicator_names):
             if not indicator_selected:
                 continue
             data = []
@@ -336,7 +389,8 @@ def main():
                 if state_coords is None:
                     continue
                 data.append((selected_state, "" ,state_coords))
-            plotter.create_plot(data, selected_x, indicator_name, dotted=True)
+            if data:  # Only create plot if there's data
+                plotter.create_plot(data, selected_x, indicator_name, dotted=True)
 
 
 

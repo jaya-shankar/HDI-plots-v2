@@ -22,6 +22,7 @@ state_data_indices = [
 health_indices = [
     "Total Fertility Rate",
     "Life Expectancy",
+    "Human Development Index",
 ]
 
 econ_indices = [
@@ -43,6 +44,7 @@ cleaned_indices ={
     "gdp" : "GDP per Capita",
     "le" : "Life Expectancy",
     "tfr" : "Total Fertility Rate",
+    "hdi" : "Human Development Index",
     "time" : "Years",
     
 }
