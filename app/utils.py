@@ -90,10 +90,23 @@ def get_country_coords(country, y, years):
             return None
 
         df = df.drop(["Country"], axis=1)
-        # keep only columns within values years[0] and years[1]
-        if(y == "Total Fertility Rate" and years[1]>2015):
-            years[1] = 2015
-        selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
+        # Get all available year columns from the dataset
+        available_years = [col for col in df.columns if col.isdigit()]
+        
+        # Filter years to only include those that exist in the dataset
+        selected_columns = [str(year) for year in range(years[0], years[1] + 1) 
+                          if str(year) in available_years]
+        
+        # If no years match, return None
+        if not selected_columns:
+            return None
+            
+        # Special case for Total Fertility Rate which might have limited data
+        if y == "Total Fertility Rate":
+            selected_columns = [col for col in selected_columns if int(col) <= 2015]
+            if not selected_columns:
+                return None
+                
         df = df[selected_columns]
         
         df = df.dropna(axis=1)
