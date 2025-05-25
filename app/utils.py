@@ -101,8 +101,11 @@ def get_country_coords(country, y, years):
         if not selected_columns:
             return None
             
-        # No need to limit Total Fertility Rate data to 2015 anymore
-        # The available_years check above will already filter to only years that exist with data
+        # Special case for Total Fertility Rate which might have limited data
+        if y == "Total Fertility Rate":
+            selected_columns = [col for col in selected_columns if int(col) <= 2015]
+            if not selected_columns:
+                return None
                 
         df = df[selected_columns]
         

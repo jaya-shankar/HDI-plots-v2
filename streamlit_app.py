@@ -128,9 +128,9 @@ def main():
     except:
         start_year = 1960
     try:
-        end_year   = int(params.get("ey", [2023])[0])
+        end_year   = int(params.get("ey", [2020])[0])
     except:
-        end_year   = 2023
+        end_year   = 2020
 
     try:
         vertical_view = params.get("vertical", ["false"])[0].lower() == "true"
