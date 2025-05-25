@@ -4,7 +4,7 @@ from matplotlib.axes import Axes
 
 class MatplotlibModule(BaseModule):
 
-    def __init__(self,subplots_count, vertical=False):
+    def __init__(self, subplots_count, vertical=False):
         # Standard colors from matplotlib color cycle
         self.color_cycle = [
             '#1f77b4',  # Blue
@@ -52,10 +52,22 @@ class MatplotlibModule(BaseModule):
             self.subplot_no += 1
             return
 
-        ax: Axes = self.ax
-        if self.subplots_count > 1:
-            ax = self.ax[self._get_plot_index(self.subplot_no)]
-        for country,gender,coords in data:
+        # Get the correct Axes object based on subplot count
+        if self.subplots_count == 1:
+            ax = self.ax
+        else:
+            if hasattr(self.ax, 'flat'):
+                # This handles both 2D arrays (like in 2x2 grid) and 1D arrays
+                ax = self.ax.flat[self.subplot_no] if self.subplot_no < len(self.ax.flat) else self.ax
+            else:
+                # This handles cases where we have a 1D array of axes
+                if isinstance(self.ax, (list, tuple)):
+                    ax = self.ax[self.subplot_no] 
+                else:
+                    # Single axes object
+                    ax = self.ax
+            
+        for country, gender, coords in data:
             # Get or assign a consistent color for this entity
             if country not in self.entity_colors:
                 self.entity_colors[country] = self.color_cycle[self.next_color_idx]
@@ -67,17 +79,15 @@ class MatplotlibModule(BaseModule):
                    linestyle='dotted' if dotted else None)
 
         ax.set_title(f"{ylabel} vs {xlabel}")
-
-        # s_y,e_y = min(data[0][2]["x"]), max(data[0][2]["x"])
-        # gap = (e_y-s_y)//6
-        # if(gap<1):
-        #     gap = 1
-        # ax.set_xticks(range(int(s_y), int(e_y) + 1, gap))
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
 
         handles, labels = ax.get_legend_handles_labels()
-        sorted_labels_handles = sorted(zip(labels, handles), key=lambda x: x[0])
-        labels, handles = zip(*sorted_labels_handles)
-        ax.legend(handles, labels)
+        if handles:  # Only add legend if there are any labels
+            sorted_labels_handles = sorted(zip(labels, handles), key=lambda x: x[0])
+            labels, handles = zip(*sorted_labels_handles)
+            ax.legend(handles, labels)
+        
         self.subplot_no += 1
     
     def save_plot(self, file_name: str = "chart.png"):

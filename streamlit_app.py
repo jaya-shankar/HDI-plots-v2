@@ -333,31 +333,43 @@ def main():
             indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]
             indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
             
+        # Process each indicator separately
         for indicator_selected, indicator_name in zip(indicators_selected, indicator_names):
             if not indicator_selected:
                 continue
-            data = []
-            if len(selected_states) > 0:
+                
+            # First process state data
+            state_data = []
+            if selected_states:
                 for selected_state in selected_states:
                     state_coords = get_state_coords(selected_state, indicator_name)
                     if state_coords is None:
                         continue
-                    data.append((selected_state, "" ,state_coords))
-                if data:  # Only create plot if there's data
-                    plotter.create_plot(data, selected_x, indicator_name, dotted=True)
-                    plotter.reduce_subplot_no()
-
-            data = []
+                    state_data.append((selected_state, "", state_coords))
+                
+                # Plot state data if available
+                if state_data:
+                    # We need to create a new subplot first for this indicator
+                    plotter.create_plot(state_data, selected_x, indicator_name, dotted=True)
+            
+            # Then process country data
+            country_data = []
             for selected_country in selected_countries:
                 country_coords = get_country_coords(selected_country, indicator_name, selected_years)
                 if country_coords is None:
                     continue
-                data.append((selected_country, "" ,country_coords))
-            if data:  # Only create plot if there's data
-                plotter.create_plot(data, selected_x, indicator_name)
+                country_data.append((selected_country, "", country_coords))
+            
+            # Plot country data if available
+            if country_data:
+                # Only create a new subplot if we didn't already create one for state data
+                if state_data:
+                    # We need to go back to the previous subplot to add country data
+                    plotter.reduce_subplot_no()
+                plotter.create_plot(country_data, selected_x, indicator_name)
 
     else:
-
+        # Education indicator for India view
         if edu_indicator:
             all_coords = []
             for selected_state in selected_states:
@@ -371,26 +383,26 @@ def main():
                 all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
                 plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
 
-
-        # Define indicators based on world/India selection
-        if world:
-            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator, hdi_indicator]
-            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita', 'Human Development Index']
-        else:
-            indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]
-            indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
+        # Process indicators for India view - define which indicators to use
+        indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]  # No HDI for India
+        indicator_names = ['Life Expectancy', 'Total Fertility Rate', 'GDP per Capita']
             
+        # Process each indicator separately
         for indicator_selected, indicator_name in zip(indicators_selected, indicator_names):
             if not indicator_selected:
                 continue
-            data = []
+                
+            # Process state data for this indicator
+            state_data = []
             for selected_state in selected_states:
                 state_coords = get_state_coords(selected_state, indicator_name)
                 if state_coords is None:
                     continue
-                data.append((selected_state, "" ,state_coords))
-            if data:  # Only create plot if there's data
-                plotter.create_plot(data, selected_x, indicator_name, dotted=True)
+                state_data.append((selected_state, "", state_coords))
+                
+            # Plot state data if available
+            if state_data:
+                plotter.create_plot(state_data, selected_x, indicator_name, dotted=True)
 
 
 
