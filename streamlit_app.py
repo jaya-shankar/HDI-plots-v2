@@ -204,7 +204,7 @@ def main():
         selected_countries = st.multiselect("Select Countries", countries, default=selected_countries, key = "countries_multiselect")
         selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
 
-        selected_years  = st.slider("Select years", min_value=1960, max_value=2023, value=(start_year, end_year), key="years_slider")
+        selected_years  = st.slider("Select years", min_value = 1960, max_value=2020, value=(start_year, end_year), key = "years_slider")
 
     else:
 

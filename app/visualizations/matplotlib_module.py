@@ -5,6 +5,21 @@ from matplotlib.axes import Axes
 class MatplotlibModule(BaseModule):
 
     def __init__(self,subplots_count, vertical=False):
+        # Standard colors from matplotlib color cycle
+        self.color_cycle = [
+            '#1f77b4',  # Blue
+            '#ff7f0e',  # Orange
+            '#2ca02c',  # Green
+            '#d62728',  # Red
+            '#9467bd',  # Purple
+            '#8c564b',  # Brown
+            '#e377c2',  # Pink
+            '#7f7f7f',  # Gray
+            '#bcbd22',  # Yellow-green
+            '#17becf'   # Cyan
+        ]
+        self.entity_colors = {}
+        self.next_color_idx = 0
 
         fig, ax = plt.subplots(1, 1)
         if(not vertical):
@@ -23,24 +38,33 @@ class MatplotlibModule(BaseModule):
         self.fig = fig
         self.ax = ax
 
-        pass
-
     def _get_plot_index(self, plot_no: int) -> int:
-        if(self.vertical):
+        if self.vertical:
             return plot_no
         else:
             if (self.subplots_count<=3):
                 return plot_no
             else:
                 return plot_no//2, plot_no%2
-
     def create_plot(self, data: list[tuple], xlabel: str, ylabel: str, dotted: bool = False) -> None:
+        # Check if data is empty
+        if not data:
+            self.subplot_no += 1
+            return
 
         ax: Axes = self.ax
-        if(self.subplots_count>1):
+        if self.subplots_count > 1:
             ax = self.ax[self._get_plot_index(self.subplot_no)]
         for country,gender,coords in data:
-            ax.plot(coords["x"], coords["y"] ,label=f"{country} {gender}", linestyle='dotted' if dotted else None)
+            # Get or assign a consistent color for this entity
+            if country not in self.entity_colors:
+                self.entity_colors[country] = self.color_cycle[self.next_color_idx]
+                self.next_color_idx = (self.next_color_idx + 1) % len(self.color_cycle)
+            
+            ax.plot(coords["x"], coords["y"], 
+                   label=f"{country} {gender}", 
+                   color=self.entity_colors[country],
+                   linestyle='dotted' if dotted else None)
 
         ax.set_title(f"{ylabel} vs {xlabel}")
 
@@ -55,9 +79,10 @@ class MatplotlibModule(BaseModule):
         labels, handles = zip(*sorted_labels_handles)
         ax.legend(handles, labels)
         self.subplot_no += 1
-
-    def save_plot(self,file_name = "chart.png"):
+    
+    def save_plot(self, file_name: str = "chart.png"):
         self.fig.savefig(file_name)
+
     def reduce_subplot_no(self):
         self.subplot_no -= 1
 
