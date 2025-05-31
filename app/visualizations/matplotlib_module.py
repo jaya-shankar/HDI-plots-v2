@@ -22,12 +22,12 @@ class MatplotlibModule(BaseModule):
         self.next_color_idx = 0
 
         fig, ax = plt.subplots(1, 1)
-        if(not vertical):
-            if(subplots_count == 2):
+        if not vertical:
+            if subplots_count == 2:
                 fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-            elif(subplots_count == 3):
+            elif subplots_count == 3:
                 fig, ax = plt.subplots(1, 3, figsize=(15, 4))
-            elif(subplots_count == 4):
+            elif subplots_count == 4:
                 fig, ax = plt.subplots(2, 2, figsize=(10, 10))
         else:
             fig, ax = plt.subplots(subplots_count, 1, figsize=(5, 5*subplots_count))
@@ -41,11 +41,10 @@ class MatplotlibModule(BaseModule):
     def _get_plot_index(self, plot_no: int) -> int:
         if self.vertical:
             return plot_no
-        else:
-            if (self.subplots_count<=3):
-                return plot_no
-            else:
-                return plot_no//2, plot_no%2
+        if self.subplots_count <= 3:
+            return plot_no
+        return     plot_no//2, plot_no%2
+
     def create_plot(self, data: list[tuple], xlabel: str, ylabel: str, dotted: bool = False) -> None:
         # Check if data is empty
         if not data:
@@ -77,6 +76,8 @@ class MatplotlibModule(BaseModule):
                    label=f"{country} {gender}", 
                    color=self.entity_colors[country],
                    linestyle='dotted' if dotted else None)
+
+        self.next_color_idx = 0
 
         ax.set_title(f"{ylabel} vs {xlabel}")
         ax.set_xlabel(xlabel)
