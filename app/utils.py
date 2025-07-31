@@ -20,11 +20,11 @@ datasets_path = {
     "Both Higher Secondary Education": root + "20-24-Higher_Secondary_fin.csv",
     "Both College Completion": root + "20-24-College_comp.csv",
     
-    "Total Fertility Rate": root + "children_per_woman_total_fertility.csv",
-    "Life Expectancy": root + "life_expectancy_years.csv",
+    "Total Fertility Rate": root + "Fertility_rate_2022.csv",
+    "Life Expectancy": root + "Life_Expectancy_2022.csv",
     "Human Development Index": root + "human-development-index.csv",
     
-    "GDP per Capita": root + "gdppercapita_us_inflation_adjusted.csv",
+    "GDP per Capita": root + "gdppercapita_us.csv",
     
     "Years": root + "years.csv",
     
@@ -90,18 +90,28 @@ def get_country_coords(country, y, years):
             return None
 
         df = df.drop(["Country"], axis=1)
+        
+        # Clean column names - remove quotes and strip whitespace
+        df.columns = df.columns.astype(str).str.strip('"').str.strip()
+        
         # keep only columns within values years[0] and years[1]
-        if(y == "Total Fertility Rate" and years[1]>2015):
-            years[1] = 2015
         selected_columns = [str(year) for year in range(years[0], years[1] + 1)]
-        df = df[selected_columns]
+        
+        # Filter to only include columns that exist in the dataframe
+        existing_columns = [col for col in selected_columns if col in df.columns]
+        if len(existing_columns) == 0:
+            return None
+            
+        df = df[existing_columns]
         
         df = df.dropna(axis=1)
+        if df.empty or df.shape[1] == 0:
+            return None
+            
         df = df.T
         df.reset_index(inplace=True)
         
         df.columns = ["x", "y"]
-        # df = df[df["x"].str.isnumeric()]
         df["x"] = df["x"].astype(int)
         
         if (df["y"].dtype == "object"):
@@ -123,11 +133,17 @@ def get_state_coords(state, y):
     if len(df) == 0:
         return None
     df = df.drop(["state"], axis=1)
+    
+    # Clean column names - remove quotes and strip whitespace
+    df.columns = df.columns.astype(str).str.strip('"').str.strip()
+    
     df = df.dropna(axis=1)
+    if df.empty or df.shape[1] == 0:
+        return None
+        
     df = df.T
     df.reset_index(inplace=True)
     df.columns = ["x", "y"]
-    # df = df[df["x"].str.isnumeric()]
     df["x"] = df["x"].astype(int)
     
     if (df["y"].dtype == "object"):
