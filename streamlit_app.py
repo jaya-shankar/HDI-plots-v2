@@ -128,9 +128,9 @@ def main():
     except:
         start_year = 1960
     try:
-        end_year   = int(params.get("ey", [2020])[0])
+        end_year   = int(params.get("ey", [2023])[0])
     except:
-        end_year   = 2020
+        end_year   = 2023
 
     try:
         vertical_view = params.get("vertical", ["false"])[0].lower() == "true"
@@ -204,7 +204,7 @@ def main():
         selected_countries = st.multiselect("Select Countries", countries, default=selected_countries, key = "countries_multiselect")
         selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
 
-        selected_years  = st.slider("Select years", min_value = 1960, max_value=2020, value=(start_year, end_year), key = "years_slider")
+        selected_years  = st.slider("Select years", min_value = 1960, max_value=2023, value=(start_year, end_year), key = "years_slider")
 
     else:
 
@@ -292,7 +292,6 @@ def main():
 
 
     all_coords = []
-# XXX TODO sort by name only
     if world:
 
         if edu_indicator:
@@ -380,8 +379,7 @@ def main():
                     all_coords.append((selected_state,gender,state_coords))
 
             if all_coords:  # Only create plot if there's data
-                all_coords = sorted(all_coords, key=lambda x: x[2]["y"][0], reverse=True)
-                plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
+                    plotter.create_plot(all_coords, selected_x, selected_y, dotted=True)
 
         # Process indicators for India view - define which indicators to use
         indicators_selected = [le_indicator, tfr_indicator, gdp_indicator]  # No HDI for India
