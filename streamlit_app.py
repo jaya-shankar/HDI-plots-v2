@@ -38,9 +38,59 @@ def get_indices():
 def get_query_params():
     """Get the query parameters"""
     params = st.query_params.to_dict()
+    # Prefer '|' as delimiter to safely handle values that contain commas (e.g., "Congo, Rep.")
+    parsed = {}
     for k, v in params.items():
-        params[k] = v.split(",")
-    return params
+        # Ensure v is a string
+        if isinstance(v, list):
+            v = ",".join(v)
+
+        if "|" in v:
+            parsed[k] = [p for p in v.split("|") if p]
+            continue
+
+        # Backward-compatibility: fall back to comma-splitting for legacy URLs,
+        # but intelligently reconstruct for keys whose values may contain commas.
+        if k in ("c", "s"):
+            try:
+                # Pull valid option lists to help reconstruct
+                opts = get_countries() if k == "c" else get_indian_states()
+            except Exception:
+                opts = []
+
+            parts = [p.strip() for p in v.split(",") if p is not None]
+            merged = []
+            i = 0
+            while i < len(parts):
+                # Try single
+                cand = parts[i]
+                if cand in opts:
+                    merged.append(cand)
+                    i += 1
+                    continue
+                # Try join with next
+                if i + 1 < len(parts):
+                    comb = (parts[i] + ", " + parts[i + 1]).strip()
+                    if comb in opts:
+                        merged.append(comb)
+                        i += 2
+                        continue
+                # Try join with next two (rare but safe)
+                if i + 2 < len(parts):
+                    comb2 = (parts[i] + ", " + parts[i + 1] + ", " + parts[i + 2]).strip()
+                    if comb2 in opts:
+                        merged.append(comb2)
+                        i += 3
+                        continue
+                # Fallback: keep as-is
+                merged.append(parts[i])
+                i += 1
+            parsed[k] = [p for p in merged if p]
+        elif k in ("gender", "other"):
+            parsed[k] = [p for p in v.split(",") if p]
+        else:
+            parsed[k] = [v]
+    return parsed
 
 def get_selected_options(params):
     """Get the selected options from the query parameters"""
@@ -192,14 +242,28 @@ def main():
         if selected_x in constants.edu_indices:
             selected_x = "Both " + selected_x
         # Add a dropdown box to select a country
-        try:
-            selected_countries = selected_countries.remove("")
-        except:
-            pass
-        try:
-            selected_states = selected_states.remove("")
-        except:
-            pass
+        # Sanitize defaults to ensure they exist in options to avoid Streamlit errors
+        if isinstance(selected_countries, str):
+            selected_countries = [selected_countries]
+        if selected_countries is None:
+            selected_countries = []
+        selected_countries = [c for c in selected_countries if c and c in countries]
+
+        if isinstance(selected_states, str):
+            selected_states = [selected_states]
+        if selected_states is None:
+            selected_states = []
+        selected_states = [s for s in selected_states if s and s in indian_states]
+
+        # Also sanitize any persisted session_state values for these widgets
+        if "countries_multiselect" in st.session_state:
+            st.session_state["countries_multiselect"] = [
+                c for c in st.session_state["countries_multiselect"] if c in countries
+            ]
+        if "states_multiselect_world" in st.session_state:
+            st.session_state["states_multiselect_world"] = [
+                s for s in st.session_state["states_multiselect_world"] if s in indian_states
+            ]
 
         selected_countries = st.multiselect("Select Countries", countries, default=selected_countries, key = "countries_multiselect")
         selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
@@ -227,7 +291,17 @@ def main():
         st.write(selected_y)
         # checkbox_state3 = col3.checkbox(options[2],value = options[2] in selected_options)
 
-        selected_states = st.multiselect("Select States", indian_states, selected_states, key = "states_multiselect_india")
+        # Sanitize defaults and session state for India states selector
+        if "states_multiselect_india" in st.session_state:
+            st.session_state["states_multiselect_india"] = [
+                s for s in st.session_state["states_multiselect_india"] if s in indian_states
+            ]
+        if isinstance(selected_states, str):
+            selected_states = [selected_states]
+        if selected_states is None:
+            selected_states = []
+        selected_states = [s for s in selected_states if s in indian_states]
+        selected_states = st.multiselect("Select States", indian_states, default=selected_states, key = "states_multiselect_india")
 
     # Determine which indicators to show based on world/India selection
     if world:
@@ -442,22 +516,22 @@ def main():
     if world:
 
         st.query_params.update({
-            "c"       : ",".join(selected_countries),
+            "c"       : "|".join(selected_countries),
             "x"       : cleaned_indices_reversed[selected_x],
             "y"       : cleaned_indices_reversed[selected_y],
             "sy"      : selected_years[0],
             "ey"      : selected_years[1],
-            "gender"  : ",".join(selected_options),
-            "other"   : ",".join(selected_other_indicators),
+            "gender"  : "|".join(selected_options),
+            "other"   : "|".join(selected_other_indicators),
             "world"   : "true",
             "vertical": str(vertical_view).lower()
         })
     else:
         st.query_params.update({
-            "s"       : ",".join(selected_states),
+            "s"       : "|".join(selected_states),
             "y"       : cleaned_indices_reversed[selected_y],
-            "gender"  : ",".join(selected_options),
-            "other"   : ",".join(selected_other_indicators),
+            "gender"  : "|".join(selected_options),
+            "other"   : "|".join(selected_other_indicators),
             "world"   : "false",
             "vertical": str(vertical_view).lower()
         })

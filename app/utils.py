@@ -64,14 +64,16 @@ states_datasets_path = {
 }
 
 def get_countries():
-    le_df     = pd.read_csv(datasets_path["Life Expectancy"])
+    
+    le_df     = pd.read_csv(datasets_path["Life Expectancy"], encoding='utf-8-sig')
     countries = le_df["Country"].unique()
     return countries
     
 def get_indian_states():
-    ind_edu_df    = pd.read_csv(states_datasets_path["Life Expectancy"])
+    ind_edu_df    = pd.read_csv(states_datasets_path["Life Expectancy"], encoding='utf-8-sig')
     indian_states = ind_edu_df["state"].unique()
     return indian_states
+
 
 # HDI preprocessing functions moved to app/hdi_preprocessor.py
 
@@ -83,7 +85,7 @@ def get_country_coords(country, y, years):
         return get_hdi_data_for_country(country, years)
     else:
         # Original implementation for other indicators
-        df = pd.read_csv(datasets_path[y])
+        df = pd.read_csv(datasets_path[y], encoding='utf-8-sig')
         df = df[df["Country"] == country]
         
         if len(df) == 0:
@@ -128,7 +130,7 @@ def get_state_coords(state, y):
     if y not in states_datasets_path:
         return None
     
-    df = pd.read_csv(states_datasets_path[y])
+    df = pd.read_csv(states_datasets_path[y], encoding='utf-8-sig')
     df = df[df["state"] == state]
     if len(df) == 0:
         return None
@@ -154,11 +156,11 @@ def get_state_coords(state, y):
 def save_csv(selected_countries, x, y, years):
     # Special handling for HDI data
     if y == "Human Development Index":
-        df_1 = pd.read_csv(datasets_path[x])
+        df_1 = pd.read_csv(datasets_path[x], encoding='utf-8-sig')
         df_2 = get_hdi_data_for_save_csv(selected_countries)
     else:
-        df_1 = pd.read_csv(datasets_path[x])
-        df_2 = pd.read_csv(datasets_path[y])
+        df_1 = pd.read_csv(datasets_path[x], encoding='utf-8-sig')
+        df_2 = pd.read_csv(datasets_path[y], encoding='utf-8-sig')
     
     df_1 = df_1[df_1["Country"].isin(selected_countries)]
     df_2 = df_2[df_2["Country"].isin(selected_countries)]
