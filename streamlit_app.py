@@ -8,7 +8,9 @@ from app.utils import (
     get_state_coords,
     save_csv,
     get_countries,
-    get_indian_states
+    get_indian_states,
+    canonicalize_country_list,
+    get_alias_display_map
 )
 
 from app.visualizations.matplotlib_module import MatplotlibModule
@@ -90,6 +92,14 @@ def get_query_params():
             parsed[k] = [p for p in v.split(",") if p]
         else:
             parsed[k] = [v]
+    # Canonicalize country params using alias mapping for robustness
+    try:
+        valid_countries = set(get_countries())
+        if "c" in parsed:
+            parsed["c"] = canonicalize_country_list(parsed.get("c", []), valid_canonicals=valid_countries)
+    except Exception:
+        # Don't break on canonicalization issues
+        pass
     return parsed
 
 def get_selected_options(params):
@@ -265,7 +275,19 @@ def main():
                 s for s in st.session_state["states_multiselect_world"] if s in indian_states
             ]
 
-        selected_countries = st.multiselect("Select Countries", countries, default=selected_countries, key = "countries_multiselect")
+        # Provide alias-aware display so users can search by common aliases
+        alias_display_map = get_alias_display_map()
+        def format_country(c: str) -> str:
+            aliases = alias_display_map.get(c, [])
+            return f"{c} ({', '.join(aliases)})" if aliases else c
+
+        selected_countries = st.multiselect(
+            "Select Countries",
+            countries,
+            default=selected_countries,
+            key="countries_multiselect",
+            format_func=format_country,
+        )
         selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
 
         selected_years  = st.slider("Select years", min_value = 1960, max_value=2023, value=(start_year, end_year), key = "years_slider")

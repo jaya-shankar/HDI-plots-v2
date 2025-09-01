@@ -16,7 +16,7 @@ The data is sourced from multiple official United Nations Development Programme 
    - `20-24-College_comp.csv`
    - `20-24-female-College_comp.csv`
    - `20-24-male-College_comp.csv`
-   Source: [World Bank EdStats](https://databank.worldbank.org/source/education-statistics)
+   Source: [World Bank EdStats](https://databank.worldbank.org/source/education-statistics)****
 
 2. Secondary Education Completion Datasets:
    - `20-24-Higher_Secondary_fin.csv`
@@ -34,13 +34,13 @@ The data is sourced from multiple official United Nations Development Programme 
    Source: [UNESCO Institute for Statistics](http://data.uis.unesco.org/)
 
 #### Economic and Demographic Indicators:
-1. `gdppercapita_us_inflation_adjusted.csv`
-   Source: [Gapminder GDP per capita](https://www.gapminder.org/data/documentation/gd001/)
+1. `gdppercapita_us.csv`
+   Source: [Gapminder GDP per capita](https://www.gapminder.org/data/documentation/gd001/) 
 
-2. `life_expectancy_years.csv`
+2. `Life_Expectancy_2022.csv`
    Source: [Gapminder Life Expectancy](https://www.gapminder.org/data/documentation/gd004/)
 
-3. `children_per_woman_total_fertility.csv`
+3. `Fertility_rate_2022.csv`
    Source: [Gapminder Total Fertility](https://www.gapminder.org/data/documentation/gd008/)
 
 4. `years.csv`

@@ -1,0 +1,19 @@
+canonical,alias,source_file
+Bahamas,"Bahamas, The",Fertility_rate_2022.csv
+Curaçao,Curacao,Fertility_rate_2022.csv
+Gambia,"Gambia, The",Fertility_rate_2022.csv
+Bahamas,"Bahamas, The",gdppercapita_us.csv
+Curaçao,Curacao,gdppercapita_us.csv
+Gambia,"Gambia, The",gdppercapita_us.csv
+South Korea,"Korea, Rep.",global
+South Korea,"Republic of Korea",global
+Brunei,"Brunei Darussalam",global
+Cape Verde,"Cabo Verde",global
+Egypt,"Egypt, Arab Rep.",global
+"Hong Kong, China","Hong Kong SAR, China",global
+Iran,"Iran, Islamic Rep.",global
+"North Korea","Korea, Dem. People's Rep.",global
+Syria,"Syrian Arab Republic",global
+Turkey,Turkiye,global
+Venezuela,"Venezuela, RB",global
+Yemen,"Yemen, Rep.",global
