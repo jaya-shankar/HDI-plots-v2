@@ -4,6 +4,7 @@ import os
 import re
 import unicodedata
 from functools import lru_cache
+from typing import Optional, Set, Dict, List
 from app.hdi_preprocessor import preprocess_hdi_data, get_hdi_data_for_country, get_hdi_data_for_save_csv, get_hdi_data_for_state
 
 root = "datasets/"
@@ -98,6 +99,8 @@ def load_country_alias_map():
         # Prefer South Korea as canonical
         "Korea, Rep.": "South Korea",
         "Republic of Korea": "South Korea",
+        "Korea (Republic of)": "South Korea",
+        "Korea, South": "South Korea",
         # A few common variants
         "Bahamas, The": "Bahamas",
         "Gambia, The": "Gambia",
@@ -140,6 +143,8 @@ def get_alias_display_map():
     for alias, canonical in {
         "Korea, Rep.": "South Korea",
         "Republic of Korea": "South Korea",
+        "Korea (Republic of)": "South Korea",
+        "Korea, South": "South Korea",
         "Bahamas, The": "Bahamas",
         "Gambia, The": "Gambia",
         "Curacao": "Curaçao",
@@ -152,23 +157,31 @@ def get_alias_display_map():
         display[k] = sorted(set(display[k]))
     return display
 
-def canonicalize_country_name(name: str, valid_canonicals: set | None = None) -> str | None:
+def canonicalize_country_name(name: str, valid_canonicals: Optional[Set[str]] = None) -> Optional[str]:
     if not name:
         return None
     mapping = load_country_alias_map()
     norm = normalize_country_name(name)
     canonical = mapping.get(norm)
+    resolved_from_map_or_match = canonical is not None
     # If explicit mapping not found, try to match against valid canonicals by normalization
     if canonical is None and valid_canonicals is not None:
         for vc in valid_canonicals:
             if normalize_country_name(vc) == norm:
                 canonical = vc
+                resolved_from_map_or_match = True
                 break
-    if canonical and valid_canonicals is not None and canonical not in valid_canonicals:
+    # Fallback: if still not found, return the original name (even if not in valid set)
+    if canonical is None:
+        canonical = name
+        resolved_from_map_or_match = False
+    # If a valid set was provided and the resolved name isn't allowed, only enforce when
+    # the name changed due to mapping/matching; otherwise keep the original as requested.
+    if valid_canonicals is not None and canonical not in valid_canonicals and resolved_from_map_or_match:
         return None
     return canonical
 
-def canonicalize_country_list(names, valid_canonicals: set | None = None):
+def canonicalize_country_list(names, valid_canonicals: Optional[Set[str]] = None) -> List[str]:
     if not names:
         return []
     out = []
