@@ -157,9 +157,9 @@ def get_alias_display_map():
         display[k] = sorted(set(display[k]))
     return display
 
-def canonicalize_country_name(name: str, valid_canonicals: Optional[Set[str]] = None) -> Optional[str]:
+def canonicalize_country_name(name: str, valid_canonicals: Optional[Set[str]] = None) -> str:
     if not name:
-        return None
+        return ""
     mapping = load_country_alias_map()
     norm = normalize_country_name(name)
     canonical = mapping.get(norm)
@@ -175,10 +175,6 @@ def canonicalize_country_name(name: str, valid_canonicals: Optional[Set[str]] = 
     if canonical is None:
         canonical = name
         resolved_from_map_or_match = False
-    # If a valid set was provided and the resolved name isn't allowed, only enforce when
-    # the name changed due to mapping/matching; otherwise keep the original as requested.
-    if valid_canonicals is not None and canonical not in valid_canonicals and resolved_from_map_or_match:
-        return None
     return canonical
 
 def canonicalize_country_list(names, valid_canonicals: Optional[Set[str]] = None) -> List[str]:
