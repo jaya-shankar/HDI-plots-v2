@@ -1,6 +1,9 @@
 # pyright: reportMissingModuleSource=false
 import pandas as pd
 import os
+import re
+import unicodedata
+from functools import lru_cache
 from app.hdi_preprocessor import preprocess_hdi_data, get_hdi_data_for_country, get_hdi_data_for_save_csv, get_hdi_data_for_state
 
 root = "datasets/"
@@ -63,9 +66,135 @@ states_datasets_path = {
     "GDP per Capita": root + india + "gdp-india.csv",
 }
 
+# Alias and country name normalization utilities
+ALIAS_CSV_PATH = os.path.join("datasets", "country_name_map.csv")
+
+def _strip_accents(text: str) -> str:
+    if not isinstance(text, str):
+        return ""
+    text = unicodedata.normalize("NFKD", text)
+    return "".join([c for c in text if not unicodedata.combining(c)])
+
+def normalize_country_name(name: str) -> str:
+    # Lowercase, strip, remove diacritics, normalize punctuation/whitespace, map & to and
+    if name is None:
+        return ""
+    s = str(name).strip()
+    s = _strip_accents(s)
+    s = s.replace("&", " and ")
+    s = re.sub(r"[\"'`]", "", s)  # quotes
+    s = re.sub(r"[().]", " ", s)  # parens and dots to space
+    s = re.sub(r"[-_/]", " ", s)  # separators to space
+    s = re.sub(r"\s+", " ", s)    # collapse spaces
+    return s.lower().strip()
+
+@lru_cache(maxsize=1)
+def load_country_alias_map():
+    # Returns a dict from normalized alias -> canonical
+    mapping = {}
+    canonical_to_aliases = {}
+    # Built-in common aliases beyond the CSV
+    builtin = {
+        # Prefer South Korea as canonical
+        "Korea, Rep.": "South Korea",
+        "Republic of Korea": "South Korea",
+        # A few common variants
+        "Bahamas, The": "Bahamas",
+        "Gambia, The": "Gambia",
+        "Curacao": "Curaçao",
+    }
+    try:
+        df = pd.read_csv(ALIAS_CSV_PATH, encoding="utf-8-sig")
+        for _, row in df.iterrows():
+            canonical = str(row.get("canonical", "")).strip()
+            alias = str(row.get("alias", "")).strip()
+            if not canonical or not alias:
+                continue
+            mapping[normalize_country_name(alias)] = canonical
+            canonical_to_aliases.setdefault(canonical, set()).add(alias)
+    except Exception:
+        # File may not exist; continue with builtins only
+        pass
+    for alias, canonical in builtin.items():
+        mapping[normalize_country_name(alias)] = canonical
+        canonical_to_aliases.setdefault(canonical, set()).add(alias)
+    # Ensure canonical self-maps too
+    canonicals = set(canonical_to_aliases.keys())
+    for c in canonicals:
+        mapping[normalize_country_name(c)] = c
+    return mapping
+
+@lru_cache(maxsize=1)
+def get_alias_display_map():
+    # Dict[canonical] -> sorted list of aliases
+    display = {}
+    try:
+        df = pd.read_csv(ALIAS_CSV_PATH, encoding="utf-8-sig")
+        for canonical, group in df.groupby("canonical"):
+            aliases = sorted(set([a for a in group["alias"].dropna().astype(str).str.strip().tolist() if a]))
+            if aliases:
+                display[canonical] = aliases
+    except Exception:
+        pass
+    # Merge builtins
+    for alias, canonical in {
+        "Korea, Rep.": "South Korea",
+        "Republic of Korea": "South Korea",
+        "Bahamas, The": "Bahamas",
+        "Gambia, The": "Gambia",
+        "Curacao": "Curaçao",
+    }.items():
+        display.setdefault(canonical, [])
+        if alias not in display[canonical]:
+            display[canonical].append(alias)
+    # Sort lists
+    for k in list(display.keys()):
+        display[k] = sorted(set(display[k]))
+    return display
+
+def canonicalize_country_name(name: str, valid_canonicals: set | None = None) -> str | None:
+    if not name:
+        return None
+    mapping = load_country_alias_map()
+    norm = normalize_country_name(name)
+    canonical = mapping.get(norm)
+    # If explicit mapping not found, try to match against valid canonicals by normalization
+    if canonical is None and valid_canonicals is not None:
+        for vc in valid_canonicals:
+            if normalize_country_name(vc) == norm:
+                canonical = vc
+                break
+    if canonical and valid_canonicals is not None and canonical not in valid_canonicals:
+        return None
+    return canonical
+
+def canonicalize_country_list(names, valid_canonicals: set | None = None):
+    if not names:
+        return []
+    out = []
+    seen = set()
+    for n in names:
+        c = canonicalize_country_name(n, valid_canonicals=valid_canonicals)
+        if c and c not in seen:
+            out.append(c)
+            seen.add(c)
+    return out
+
+def standardize_country_column(df: pd.DataFrame, country_col: str = "Country") -> pd.DataFrame:
+    if country_col not in df.columns:
+        return df
+    mapping = load_country_alias_map()
+    # Map by normalization
+    def _map_fn(x):
+        return mapping.get(normalize_country_name(x), x)
+    df = df.copy()
+    df[country_col] = df[country_col].apply(_map_fn)
+    return df
+
 def get_countries():
     
     le_df     = pd.read_csv(datasets_path["Life Expectancy"], encoding='utf-8-sig')
+    le_df     = standardize_country_column(le_df, "Country")
     countries = le_df["Country"].unique()
     return countries
     
@@ -86,6 +215,7 @@ def get_country_coords(country, y, years):
     else:
         # Original implementation for other indicators
         df = pd.read_csv(datasets_path[y], encoding='utf-8-sig')
+        df = standardize_country_column(df, "Country")
         df = df[df["Country"] == country]
         
         if len(df) == 0:
@@ -158,9 +288,13 @@ def save_csv(selected_countries, x, y, years):
     if y == "Human Development Index":
         df_1 = pd.read_csv(datasets_path[x], encoding='utf-8-sig')
         df_2 = get_hdi_data_for_save_csv(selected_countries)
+        df_1 = standardize_country_column(df_1, "Country")
+        df_2 = standardize_country_column(df_2, "Country")
     else:
         df_1 = pd.read_csv(datasets_path[x], encoding='utf-8-sig')
         df_2 = pd.read_csv(datasets_path[y], encoding='utf-8-sig')
+        df_1 = standardize_country_column(df_1, "Country")
+        df_2 = standardize_country_column(df_2, "Country")
     
     df_1 = df_1[df_1["Country"].isin(selected_countries)]
     df_2 = df_2[df_2["Country"].isin(selected_countries)]

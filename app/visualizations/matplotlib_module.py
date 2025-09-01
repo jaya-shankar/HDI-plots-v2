@@ -77,8 +77,6 @@ class MatplotlibModule(BaseModule):
                    color=self.entity_colors[country],
                    linestyle='dotted' if dotted else None)
 
-        self.next_color_idx = 0
-
         ax.set_title(f"{ylabel} vs {xlabel}")
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)

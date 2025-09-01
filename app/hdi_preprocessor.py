@@ -1,11 +1,74 @@
 # pyright: reportMissingModuleSource=false
 import pandas as pd
 import os
+import re
+import unicodedata
 
 # Path constants
 ROOT = "datasets/"
 HDI_PATH = ROOT + "human-development-index.csv"
 PROCESSED_HDI_PATH = ROOT + "processed_hdi.csv"
+
+# Minimal alias/normalization utilities (duplicated to avoid circular imports)
+ALIAS_CSV_PATH = os.path.join(ROOT, "country_name_map.csv")
+
+def _strip_accents(text: str) -> str:
+    if not isinstance(text, str):
+        return ""
+    text = unicodedata.normalize("NFKD", text)
+    return "".join([c for c in text if not unicodedata.combining(c)])
+
+def _normalize_country_name(name: str) -> str:
+    if name is None:
+        return ""
+    s = str(name).strip()
+    s = _strip_accents(s)
+    s = s.replace("&", " and ")
+    s = re.sub(r"[\"'`]", "", s)
+    s = re.sub(r"[().]", " ", s)
+    s = re.sub(r"[-_/]", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    return s.lower().strip()
+
+def _load_country_alias_map():
+    mapping = {}
+    # Built-in common aliases
+    builtin = {
+        "Korea, Rep.": "South Korea",
+        "Republic of Korea": "South Korea",
+        "Bahamas, The": "Bahamas",
+        "Gambia, The": "Gambia",
+        "Curacao": "Curaçao",
+    }
+    try:
+        df = pd.read_csv(ALIAS_CSV_PATH, encoding="utf-8-sig")
+        for _, row in df.iterrows():
+            canonical = str(row.get("canonical", "")).strip()
+            alias = str(row.get("alias", "")).strip()
+            if canonical and alias:
+                mapping[_normalize_country_name(alias)] = canonical
+    except Exception:
+        pass
+    for alias, canonical in builtin.items():
+        mapping[_normalize_country_name(alias)] = canonical
+    # Also self-map canonical keys (best-effort)
+    for v in list(set(mapping.values())):
+        mapping[_normalize_country_name(v)] = v
+    return mapping
+
+_ALIAS_MAP = None
+
+def _standardize_country_column(df: pd.DataFrame, col: str = "Country") -> pd.DataFrame:
+    global _ALIAS_MAP
+    if col not in df.columns:
+        return df
+    if _ALIAS_MAP is None:
+        _ALIAS_MAP = _load_country_alias_map()
+    def _map_fn(x):
+        return _ALIAS_MAP.get(_normalize_country_name(x), x)
+    df = df.copy()
+    df[col] = df[col].apply(_map_fn)
+    return df
 
 def preprocess_hdi_data():
     """
@@ -30,6 +93,8 @@ def preprocess_hdi_data():
     
     # Reset index to make Country a column again
     pivoted_df.reset_index(inplace=True)
+    # Standardize country names to canonical to align with other datasets
+    pivoted_df = _standardize_country_column(pivoted_df, "Country")
     
     # Save the preprocessed data to a temporary file
     pivoted_df.to_csv(PROCESSED_HDI_PATH, index=False)
@@ -52,6 +117,8 @@ def get_hdi_data_for_country(country, years):
         preprocess_hdi_data()
     
     df = pd.read_csv(PROCESSED_HDI_PATH)
+    # Ensure standardized names in case processed file predates standardization
+    df = _standardize_country_column(df, "Country")
     df = df[df["Country"] == country]
     
     if len(df) == 0:
@@ -93,6 +160,7 @@ def get_hdi_data_for_save_csv(selected_countries):
         preprocess_hdi_data()
     
     df = pd.read_csv(PROCESSED_HDI_PATH)
+    df = _standardize_country_column(df, "Country")
     return df[df["Country"].isin(selected_countries)]
 
 
