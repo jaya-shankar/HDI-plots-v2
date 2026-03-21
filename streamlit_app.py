@@ -281,14 +281,15 @@ def main():
             aliases = alias_display_map.get(c, [])
             return f"{c} ({', '.join(aliases)})" if aliases else c
 
-        selected_countries = st.multiselect(
-            "Select Countries",
-            countries,
-            default=selected_countries,
-            key="countries_multiselect",
-            format_func=format_country,
-        )
-        selected_states = st.multiselect("Select Indian States", indian_states, default=selected_states, key = "states_multiselect_world")
+        countries_kwargs = {"key": "countries_multiselect", "format_func": format_country}
+        if "countries_multiselect" not in st.session_state:
+            countries_kwargs["default"] = selected_countries
+        selected_countries = st.multiselect("Select Countries", countries, **countries_kwargs)
+
+        states_kwargs = {"key": "states_multiselect_world"}
+        if "states_multiselect_world" not in st.session_state:
+            states_kwargs["default"] = selected_states
+        selected_states = st.multiselect("Select Indian States", indian_states, **states_kwargs)
 
         selected_years  = st.slider("Select years", min_value = 1960, max_value=2023, value=(start_year, end_year), key = "years_slider")
 
